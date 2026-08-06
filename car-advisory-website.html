@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VINDEX — Car Advisory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12161b;
+    --bg-2:#0d1013;
+    --panel:#1b2129;
+    --panel-2:#232b34;
+    --border:rgba(237,239,242,0.09);
+    --text:#edeff2;
+    --muted:#8a93a0;
+    --amber:#f2a93b;
+    --amber-dim:#8a6a2f;
+    --teal:#4fd1c5;
+    --red:#e2574c;
+    --radius:10px;
+    --mono:'JetBrains Mono', monospace;
+    --display:'Space Grotesk', sans-serif;
+    --body:'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--body);
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--amber); color:#14181c;}
+
+  /* ---------- NAV ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(13,16,19,0.88); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-wrap{
+    max-width:1180px; margin:0 auto; display:flex; align-items:center;
+    justify-content:space-between; padding:14px 24px; gap:20px;
+  }
+  .logo{display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;}
+  .logo .mark{width:28px; height:28px; flex-shrink:0;}
+  .logo .word{font-family:var(--display); font-weight:700; font-size:19px; letter-spacing:0.5px;}
+  .logo .word span{color:var(--amber);}
+  nav.links{display:flex; gap:4px; align-items:center; flex-wrap:wrap;}
+  nav.links button{
+    background:none; border:none; color:var(--muted); font-family:var(--body);
+    font-size:14px; font-weight:500; padding:8px 12px; border-radius:8px; cursor:pointer;
+    transition:.15s;
+  }
+  nav.links button:hover{color:var(--text); background:var(--panel-2);}
+  nav.links button.active{color:var(--bg); background:var(--amber);}
+  .nav-right{display:flex; align-items:center; gap:8px;}
+  .pill-btn{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    font-family:var(--body); font-size:13px; font-weight:600; padding:8px 14px;
+    border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  .pill-btn:hover{border-color:var(--amber);}
+  .pill-btn.primary{background:var(--amber); color:#14181c; border-color:var(--amber);}
+  .badge-count{
+    background:var(--red); color:#fff; font-size:10px; font-weight:700; border-radius:50%;
+    width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;
+    margin-left:2px;
+  }
+
+  main{max-width:1180px; margin:0 auto; padding:0 24px 80px;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+
+  /* ---------- HOME ---------- */
+  .hero{
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:40px; align-items:center;
+    padding:64px 0 40px; border-bottom:1px solid var(--border);
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--teal); margin-bottom:16px;
+  }
+  .hero h1{
+    font-family:var(--display); font-size:52px; line-height:1.05; margin:0 0 18px;
+    font-weight:700; letter-spacing:-0.5px;
+  }
+  .hero h1 em{color:var(--amber); font-style:normal;}
+  .hero p.lead{color:var(--muted); font-size:16px; line-height:1.6; max-width:480px; margin:0 0 28px;}
+  .hero-actions{display:flex; gap:12px; flex-wrap:wrap;}
+  .btn{
+    font-family:var(--body); font-weight:600; font-size:14.5px; padding:13px 22px;
+    border-radius:8px; cursor:pointer; border:1px solid transparent; transition:.15s;
+  }
+  .btn-amber{background:var(--amber); color:#14181c;}
+  .btn-amber:hover{background:#ffbe57;}
+  .btn-outline{background:none; border:1px solid var(--border); color:var(--text);}
+  .btn-outline:hover{border-color:var(--teal); color:var(--teal);}
+
+  .cluster{position:relative; display:flex; align-items:center; justify-content:center;}
+  .stat-row{display:flex; gap:18px; margin-top:26px; flex-wrap:wrap;}
+  .stat{font-family:var(--mono);}
+  .stat b{display:block; font-size:22px; color:var(--amber);}
+  .stat span{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
+
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; margin:56px 0 20px;}
+  .section-head h2{font-family:var(--display); font-size:24px; margin:0; font-weight:600;}
+  .section-head .num{font-family:var(--mono); color:var(--muted); font-size:12px;}
+
+  .quiz-teaser{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:20px;
+  }
+  .qt-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px; cursor:pointer; transition:.15s;
+  }
+  .qt-card:hover{border-color:var(--amber); transform:translateY(-2px);}
+  .qt-card .ico{font-family:var(--mono); color:var(--teal); font-size:12px; margin-bottom:10px; display:block;}
+  .qt-card h4{margin:0 0 6px; font-size:15px; font-family:var(--display);}
+  .qt-card p{margin:0; font-size:12.5px; color:var(--muted); line-height:1.5;}
+
+  /* ---------- FILTER BAR ---------- */
+  .filter-bar{
+    display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr 1fr auto; gap:10px;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px; margin:22px 0 26px; align-items:end;
+  }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field label{font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:var(--mono);}
+  .field input, .field select{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:9px 10px; border-radius:6px; font-family:var(--body); font-size:13px;
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--amber); outline-offset:1px;}
+  .reset-btn{
+    background:none; border:1px solid var(--border); color:var(--muted); border-radius:6px;
+    padding:9px 12px; font-size:12.5px; cursor:pointer; font-weight:600;
+  }
+  .reset-btn:hover{color:var(--red); border-color:var(--red);}
+  .result-count{font-family:var(--mono); color:var(--muted); font-size:12.5px; margin-bottom:14px;}
+
+  /* ---------- CAR GRID ---------- */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .car-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; display:flex; flex-direction:column; transition:.18s;
+  }
+  .car-card:hover{border-color:rgba(242,169,59,0.5); transform:translateY(-3px);}
+  .car-media{
+    position:relative; height:130px; display:flex; align-items:center; justify-content:center;
+    border-bottom:1px solid var(--border);
+  }
+  .car-media svg{width:82%; height:auto;}
+  .fav-btn{
+    position:absolute; top:10px; right:10px; background:rgba(13,16,19,0.7); border:1px solid var(--border);
+    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px; color:var(--muted);
+  }
+  .fav-btn.active{color:var(--red); border-color:var(--red);}
+  .body-tag{
+    position:absolute; top:10px; left:10px; font-family:var(--mono); font-size:9.5px;
+    text-transform:uppercase; letter-spacing:1px; background:rgba(13,16,19,0.7); border:1px solid var(--border);
+    padding:3px 8px; border-radius:20px; color:var(--muted);
+  }
+  .car-body{padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1;}
+  .car-title{font-family:var(--display); font-size:16.5px; font-weight:600; margin:0; cursor:pointer;}
+  .car-title:hover{color:var(--amber);}
+  .car-sub{font-size:11.5px; color:var(--muted); font-family:var(--mono);}
+  .car-price{font-family:var(--mono); font-size:19px; color:var(--amber); font-weight:700; margin-top:2px;}
+  .spec-mini{display:flex; gap:10px; font-size:11px; color:var(--muted); font-family:var(--mono); flex-wrap:wrap;}
+  .car-actions{display:flex; gap:8px; margin-top:auto; padding-top:10px;}
+  .car-actions button{
+    flex:1; font-size:12px; font-weight:600; padding:8px 6px; border-radius:6px; cursor:pointer;
+    border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+  }
+  .car-actions button.on{background:var(--teal); color:#0d1013; border-color:var(--teal);}
+  .car-actions button:hover{border-color:var(--teal);}
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--muted); border:1px dashed var(--border);
+    border-radius:var(--radius); font-family:var(--mono); font-size:13px;
+  }
+
+  /* Compare floating bar */
+  .compare-bar{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--panel-2); border:1px solid var(--amber); border-radius:30px;
+    padding:10px 10px 10px 18px; display:none; align-items:center; gap:14px; z-index:60;
+    box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  }
+  .compare-bar.show{display:flex;}
+  .compare-bar span{font-family:var(--mono); font-size:12.5px; color:var(--muted);}
+
+  /* ---------- QUIZ ---------- */
+  .quiz-wrap{max-width:640px; margin:40px auto 0;}
+  .quiz-progress{display:flex; gap:6px; margin-bottom:30px;}
+  .quiz-progress div{height:3px; flex:1; background:var(--border); border-radius:2px;}
+  .quiz-progress div.done{background:var(--amber);}
+  .q-step{display:none;}
+  .q-step.active{display:block; animation:fade .3s ease;}
+  .q-step h3{font-family:var(--display); font-size:22px; margin:0 0 6px;}
+  .q-step p.hint{color:var(--muted); font-size:13.5px; margin:0 0 24px;}
+  .opt-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .opt-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; cursor:pointer; text-align:left;
+  }
+  .opt-card:hover{border-color:var(--teal);}
+  .opt-card.sel{border-color:var(--amber); background:rgba(242,169,59,0.08);}
+  .opt-card b{display:block; font-family:var(--display); font-size:15px; margin-bottom:4px;}
+  .opt-card small{color:var(--muted); font-size:11.5px;}
+  .range-row{display:flex; align-items:center; gap:16px; margin-top:10px;}
+  .range-row input[type=range]{flex:1; accent-color:var(--amber);}
+  .range-val{font-family:var(--mono); color:var(--amber); font-size:20px; min-width:90px; text-align:right;}
+  .q-nav{display:flex; justify-content:space-between; margin-top:32px;}
+
+  /* ---------- RESULTS ---------- */
+  .res-car{
+    display:grid; grid-template-columns:110px 1fr auto; gap:18px; align-items:center;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; margin-bottom:14px;
+  }
+  .res-car .car-media{height:90px; border:none;}
+  .gauge-wrap{display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .gauge-wrap span{font-family:var(--mono); font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;}
+  .res-info h4{margin:0 0 4px; font-family:var(--display); font-size:16.5px;}
+  .res-info .car-sub{margin-bottom:6px;}
+  .why{font-size:12px; color:var(--teal); font-family:var(--mono);}
+
+  /* ---------- COMPARE TABLE ---------- */
+  .compare-table{width:100%; border-collapse:collapse; margin-top:10px;}
+  .compare-table th, .compare-table td{
+    border-bottom:1px solid var(--border); padding:12px 14px; text-align:left; font-size:13.5px;
+  }
+  .compare-table th{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--muted); font-weight:500; vertical-align:bottom;
+  }
+  .compare-table td.label{font-family:var(--mono); color:var(--muted); font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px;}
+  .compare-table .colhead{display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
+  .compare-table .colhead b{font-family:var(--display); font-size:15px; color:var(--text); text-transform:none; letter-spacing:0;}
+  .remove-col{background:none; border:1px solid var(--border); color:var(--muted); border-radius:6px; font-size:11px; padding:4px 8px; cursor:pointer;}
+  .remove-col:hover{color:var(--red); border-color:var(--red);}
+  .best-val{color:var(--amber); font-weight:700;}
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,12,14,0.72); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    max-width:620px; width:100%; max-height:88vh; overflow-y:auto; padding:0;
+  }
+  .modal-head{display:flex; justify-content:space-between; align-items:flex-start; padding:20px 22px 0;}
+  .modal-close{background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1;}
+  .modal-body{padding:16px 22px 26px;}
+  .detail-media{
+    height:180px; display:flex; align-items:center; justify-content:center; margin:0 0 14px;
+    background:var(--panel-2); border-radius:10px;
+  }
+  .detail-media svg{width:60%;}
+  .modal-body h2{font-family:var(--display); margin:0 0 2px; font-size:24px;}
+  .modal-body .car-sub{font-size:12.5px; margin-bottom:10px;}
+  .detail-price{font-family:var(--mono); color:var(--amber); font-size:26px; font-weight:700; margin:6px 0 16px;}
+  .spec-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px;}
+  .spec-box{background:var(--panel-2); border-radius:8px; padding:10px; text-align:center;}
+  .spec-box b{display:block; font-family:var(--mono); color:var(--teal); font-size:15px;}
+  .spec-box span{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;}
+  .pc-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;}
+  .pc-col h5{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; margin:0 0 8px;}
+  .pc-col.pro h5{color:var(--teal);} .pc-col.con h5{color:var(--red);}
+  .pc-col ul{margin:0; padding-left:18px; font-size:13px; line-height:1.7; color:var(--text);}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions button{flex:1;}
+
+  /* ---------- LOGIN ---------- */
+  .login-modal .modal{max-width:380px;}
+  .login-modal .modal-body{padding:8px 26px 28px;}
+  .login-modal h2{font-family:var(--display); margin:12px 0 4px;}
+  .login-modal p{color:var(--muted); font-size:13px; margin:0 0 20px;}
+  .login-modal input{
+    width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    padding:11px 12px; border-radius:8px; margin-bottom:12px; font-family:var(--body); font-size:13.5px;
+  }
+  .login-modal .btn{width:100%; margin-top:6px;}
+  .tab-row{display:flex; gap:4px; background:var(--panel-2); border-radius:8px; padding:4px; margin-bottom:18px;}
+  .tab-row button{flex:1; background:none; border:none; color:var(--muted); padding:8px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;}
+  .tab-row button.active{background:var(--amber); color:#14181c;}
+
+  footer{border-top:1px solid var(--border); padding:26px 24px; text-align:center; color:var(--muted); font-size:12px; font-family:var(--mono);}
+
+  @media(max-width:880px){
+    .hero{grid-template-columns:1fr; padding-top:36px;}
+    .hero h1{font-size:36px;}
+    .quiz-teaser{grid-template-columns:1fr 1fr;}
+    .filter-bar{grid-template-columns:1fr 1fr;}
+    .grid{grid-template-columns:1fr 1fr;}
+    .opt-grid{grid-template-columns:1fr;}
+    .res-car{grid-template-columns:70px 1fr; }
+    .res-car .gauge-wrap{grid-column:1/3;}
+  }
+  @media(max-width:560px){
+    .grid{grid-template-columns:1fr;}
+    .quiz-teaser{grid-template-columns:1fr;}
+    nav.links{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-wrap">
+    <div class="logo" onclick="showView('home')">
+      <svg class="mark" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f2a93b" stroke-width="1.6"/><path d="M12 6v6l4 2" stroke="#4fd1c5" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <div class="word">VIN<span>DEX</span></div>
+    </div>
+    <nav class="links">
+      <button data-view="home" onclick="showView('home')">Home</button>
+      <button data-view="browse" onclick="showView('browse')">Browse</button>
+      <button data-view="quiz" onclick="startQuiz()">Advisor Quiz</button>
+      <button data-view="compareView" onclick="showView('compareView')">Compare</button>
+      <button data-view="wishlist" onclick="showView('wishlist')">Wishlist <span class="badge-count" id="wishCount" style="display:none;">0</span></button>
+    </nav>
+    <div class="nav-right">
+      <button class="pill-btn" id="loginBtn" onclick="openLogin()">Sign in</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= HOME ================= -->
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Car Advisory &amp; Comparison</div>
+        <h1>Choose your next car <em>by the numbers</em>, not the showroom pitch.</h1>
+        <p class="lead">Answer four quick questions about your budget and driving life, and get a shortlist scored and ranked to fit — then compare specs side by side before you decide.</p>
+        <div class="hero-actions">
+          <button class="btn btn-amber" onclick="startQuiz()">Take the 60‑second quiz →</button>
+          <button class="btn btn-outline" onclick="showView('browse')">Browse all cars</button>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><b id="statTotal">0</b><span>Cars listed</span></div>
+          <div class="stat"><b id="statBrands">0</b><span>Brands</span></div>
+          <div class="stat"><b>4</b><span>Body types</span></div>
+          <div class="stat"><b>5</b><span>Fuel types</span></div>
+        </div>
+      </div>
+      <div class="cluster">
+        <svg viewBox="0 0 300 300" width="100%" style="max-width:340px;">
+          <circle cx="150" cy="150" r="130" fill="none" stroke="#232b34" stroke-width="14"/>
+          <circle id="homeGaugeArc" cx="150" cy="150" r="130" fill="none" stroke="#f2a93b" stroke-width="14"
+            stroke-dasharray="816" stroke-dashoffset="620" stroke-linecap="round" transform="rotate(-90 150 150)"/>
+          <text x="150" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="42" fill="#edeff2" font-weight="700">86%</text>
+          <text x="150" y="172" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#8a93a0" letter-spacing="2">MATCH SCORE</text>
+          <text x="150" y="230" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#4fd1c5">e.g. Tata Punch → City family driver</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-head"><h2>Start from what you know</h2><span class="num">01 / 03</span></div>
+    <div class="quiz-teaser">
+      <div class="qt-card" onclick="showView('browse')">
+        <span class="ico">// BUDGET</span>
+        <h4>Browse by price</h4>
+        <p>Filter the full catalogue by price, brand, fuel and body type.</p>
+      </div>
+      <div class="qt-card" onclick="startQuiz()">
+        <span class="ico">// ADVISOR</span>
+        <h4>Take the quiz</h4>
+        <p>Get a ranked shortlist matched to your budget and lifestyle.</p>
+      </div>
+      <div class="qt-card" onclick="showView('compareView')">
+        <span class="ico">// COMPARE</span>
+        <h4>Compare specs</h4>
+        <p>Line up 2–3 cars side by side on every spec that matters.</p>
+      </div>
+      <div class="qt-card" onclick="showView('wishlist')">
+        <span class="ico">// SAVE</span>
+        <h4>Your wishlist</h4>
+        <p>Keep track of cars you're seriously considering.</p>
+      </div>
+    </div>
+
+    <div class="section-head"><h2>Recently added</h2><span class="num">02 / 03</span></div>
+    <div class="grid" id="homeFeatured"></div>
+  </section>
+
+  <!-- ================= BROWSE ================= -->
+  <section class="view" id="view-browse">
+    <div class="section-head" style="margin-top:32px;"><h2>Browse the catalogue</h2><span class="num" id="browseNum"></span></div>
+    <div class="filter-bar">
+      <div class="field">
+        <label>Search</label>
+        <input type="text" id="f-search" placeholder="Make or model…" oninput="renderBrowse()">
+      </div>
+      <div class="field">
+        <label>Brand</label>
+        <select id="f-brand" onchange="renderBrowse()"><option value="">All brands</option></select>
+      </div>
+      <div class="field">
+        <label>Fuel type</label>
+        <select id="f-fuel" onchange="renderBrowse()"><option value="">All fuel</option></select>
+      </div>
+      <div class="field">
+        <label>Transmission</label>
+        <select id="f-trans" onchange="renderBrowse()"><option value="">All</option></select>
+      </div>
+      <div class="field">
+        <label>Body type</label>
+        <select id="f-body" onchange="renderBrowse()"><option value="">All types</option></select>
+      </div>
+      <button class="reset-btn" onclick="resetFilters()">Reset</button>
+    </div>
+    <div class="field" style="margin:-10px 0 18px; max-width:320px;">
+      <label>Max price — <span id="priceLabel" style="color:var(--amber); font-family:var(--mono);">₹45L</span></label>
+      <input type="range" id="f-price" min="4" max="45" value="45" oninput="renderBrowse()">
+    </div>
+    <div class="result-count" id="browseCount"></div>
+    <div class="grid" id="browseGrid"></div>
+  </section>
+
+  <!-- ================= QUIZ ================= -->
+  <section class="view" id="view-quiz">
+    <div class="quiz-wrap">
+      <div class="quiz-progress">
+        <div id="qp1"></div><div id="qp2"></div><div id="qp3"></div><div id="qp4"></div>
+      </div>
+
+      <div class="q-step active" id="step-1">
+        <h3>What's your budget?</h3>
+        <p class="hint">Drag to set the most you'd like to spend, on-road.</p>
+        <div class="range-row">
+          <input type="range" id="q-budget" min="4" max="45" value="12" oninput="document.getElementById('budgetVal').textContent='₹'+this.value+'L'">
+          <div class="range-val" id="budgetVal">₹12L</div>
+        </div>
+        <div class="q-nav"><span></span><button class="btn btn-amber" onclick="quizNext(1)">Next →</button></div>
+      </div>
+
+      <div class="q-step" id="step-2">
+        <h3>How will you mostly drive?</h3>
+        <p class="hint">Pick the pattern that best matches daily use.</p>
+        <div class="opt-grid" id="usage-opts">
+          <button class="opt-card" data-val="city" onclick="selectOpt(this,'usage')"><b>City commute</b><small>Short trips, traffic, tight parking</small></button>
+          <button class="opt-card" data-val="highway" onclick="selectOpt(this,'usage')"><b>Highway / long distance</b><small>Frequent intercity travel</small></button>
+          <button class="opt-card" data-val="mixed" onclick="selectOpt(this,'usage')"><b>Mixed use</b><small>A bit of everything</small></button>
+          <button class="opt-card" data-val="offroad" onclick="selectOpt(this,'usage')"><b>Rough roads / off-road</b><small>Unpaved roads, hill areas</small></button>
+        </div>
+        <div class="q-nav"><button class="btn btn-outline" onclick="quizBack(2)">← Back</button><button class="btn btn-amber" onclick="quizNext(2)">Next →</button></div>
+      </div>
+
+      <div class="q-step" id="step-3">
+        <h3>How many people usually ride along?</h3>
+        <p class="hint">Include yourself. This sets the minimum seating we'll recommend.</p>
+        <div class="opt-grid" id="family-opts">
+          <button class="opt-card" data-val="2" onclick="selectOpt(this,'family')"><b>1–2 people</b><small>Solo or couple</small></button>
+          <button class="opt-card" data-val="4" onclick="selectOpt(this,'family')"><b>3–4 people</b><small>Small family</small></button>
+          <button class="opt-card" data-val="6" onclick="selectOpt(this,'family')"><b>5–6 people</b><small>Larger family</small></button>
+          <button class="opt-card" data-val="7" onclick="selectOpt(this,'family')"><b>7+ people</b><small>Big group, need 3rd row</small></button>
+        </div>
+        <div class="q-nav"><button class="btn btn-outline" onclick="quizBack(3)">← Back</button><button class="btn btn-amber" onclick="quizNext(3)">Next →</button></div>
+      </div>
+
+      <div class="q-step" id="step-4">
+        <h3>Any fuel preference?</h3>
+        <p class="hint">We'll weigh this in, but won't rule other cars out.</p>
+        <div class="opt-grid" id="fuel-opts">
+          <button class="opt-card" data-val="any" onclick="selectOpt(this,'fuel')"><b>No preference</b><small>Show me the best overall match</small></button>
+          <button class="opt-card" data-val="Petrol" onclick="selectOpt(this,'fuel')"><b>Petrol</b><small>Wide service network</small></button>
+          <button class="opt-card" data-val="Diesel" onclick="selectOpt(this,'fuel')"><b>Diesel</b><small>High-mileage highway driving</small></button>
+          <button class="opt-card" data-val="CNG" onclick="selectOpt(this,'fuel')"><b>CNG</b><small>Lowest running cost</small></button>
+          <button class="opt-card" data-val="Electric" onclick="selectOpt(this,'fuel')"><b>Electric</b><small>Zero tailpipe emissions</small></button>
+          <button class="opt-card" data-val="Hybrid" onclick="selectOpt(this,'fuel')"><b>Hybrid</b><small>Efficiency without plugging in</small></button>
+        </div>
+        <div class="q-nav"><button class="btn btn-outline" onclick="quizBack(4)">← Back</button><button class="btn btn-amber" onclick="submitQuiz()">See my matches →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section class="view" id="view-results">
+    <div class="section-head" style="margin-top:32px;">
+      <h2>Your recommended shortlist</h2>
+      <button class="pill-btn" onclick="startQuiz()">Retake quiz</button>
+    </div>
+    <p class="hint" style="color:var(--muted); font-size:13.5px; margin-top:-10px;" id="resultsSummary"></p>
+    <div id="resultsList" style="margin-top:20px;"></div>
+  </section>
+
+  <!-- ================= COMPARE ================= -->
+  <section class="view" id="view-compareView">
+    <div class="section-head" style="margin-top:32px;"><h2>Compare cars</h2><span class="num" id="compareNum"></span></div>
+    <div id="compareEmpty" class="empty-state" style="display:none;">
+      No cars selected yet. Head to Browse and tap "Compare" on 2–3 cars.<br><br>
+      <button class="btn btn-amber" onclick="showView('browse')">Browse cars</button>
+    </div>
+    <div id="compareTableWrap" style="overflow-x:auto;"></div>
+  </section>
+
+  <!-- ================= WISHLIST ================= -->
+  <section class="view" id="view-wishlist">
+    <div class="section-head" style="margin-top:32px;"><h2>Your wishlist</h2><span class="num" id="wishNum"></span></div>
+    <div id="wishEmpty" class="empty-state" style="display:none;">
+      Nothing saved yet. Tap the ♡ on any car to add it here.<br><br>
+      <button class="btn btn-amber" onclick="showView('browse')">Browse cars</button>
+    </div>
+    <div class="grid" id="wishGrid"></div>
+  </section>
+
+</main>
+
+<div class="compare-bar" id="compareBar">
+  <span id="compareBarText">0 selected</span>
+  <button class="pill-btn primary" onclick="showView('compareView')">Compare now</button>
+  <button class="reset-btn" onclick="clearCompare()">Clear</button>
+</div>
+
+<!-- Detail modal -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="modal-head"><span></span><button class="modal-close" onclick="closeDetail()">×</button></div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- Login modal -->
+<div class="overlay login-modal" id="loginOverlay" onclick="if(event.target===this)closeLogin()">
+  <div class="modal">
+    <div class="modal-head"><span></span><button class="modal-close" onclick="closeLogin()">×</button></div>
+    <div class="modal-body">
+      <div class="tab-row">
+        <button id="tabSignin" class="active" onclick="setAuthTab('signin')">Sign in</button>
+        <button id="tabSignup" onclick="setAuthTab('signup')">Create account</button>
+      </div>
+      <h2 id="authTitle">Welcome back</h2>
+      <p>Sign in to keep your wishlist across visits.</p>
+      <input type="text" id="authName" placeholder="Full name" style="display:none;">
+      <input type="email" id="authEmail" placeholder="Email address">
+      <input type="password" id="authPass" placeholder="Password">
+      <p id="authError" style="display:none; color:var(--red); font-size:12.5px; margin:-4px 0 4px;"></p>
+      <button class="btn btn-amber" onclick="doAuth()" id="authSubmit">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<footer>VINDEX — Car Advisory prototype · front-end demo built from the project blueprint · data is illustrative, not live pricing</footer>
+
+<script>
+/* ============================= DATA ============================= */
+const CARS = [
+  {id:1, make:"Maruti Suzuki", model:"Alto K10", price:4.5, fuel:"Petrol", trans:"Manual", body:"Hatchback", seats:5, mileage:24.9, unit:"kmpl", pros:["Lowest price of entry","Easiest to park and maneuver","Cheapest to maintain"], cons:["No highway comfort","Minimal safety kit","Small boot space"]},
+  {id:2, make:"Tata", model:"Punch", price:7.5, fuel:"Petrol", trans:"Manual", body:"SUV", seats:5, mileage:20.1, unit:"kmpl", pros:["5-star safety rating","SUV stance at hatchback price","Good ground clearance"], cons:["No diesel option","Rear seat room modest","Firm ride at low speed"]},
+  {id:3, make:"Hyundai", model:"Grand i10 Nios", price:6.2, fuel:"CNG", trans:"Manual", body:"Hatchback", seats:5, mileage:27.0, unit:"km/kg", pros:["Very low running cost","Practical cabin space","Strong resale value"], cons:["Reduced boot with CNG kit","Slower acceleration on CNG"]},
+  {id:4, make:"Honda", model:"Amaze", price:8.9, fuel:"Diesel", trans:"Manual", body:"Sedan", seats:5, mileage:24.9, unit:"kmpl", pros:["Efficient diesel for highways","Comfortable rear seat","Reliable engine"], cons:["Diesel clatter at idle","Interior feels dated"]},
+  {id:5, make:"Kia", model:"Sonet", price:10.9, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:21.3, unit:"kmpl", pros:["Feature-rich cabin","Punchy turbo-diesel","Bold styling"], cons:["Firm suspension","Road noise on highway"]},
+  {id:6, make:"Maruti Suzuki", model:"Ertiga", price:11.9, fuel:"Petrol", trans:"Manual", body:"MPV", seats:7, mileage:19.3, unit:"kmpl", pros:["Genuine 3rd row for adults","Low maintenance cost","Spacious boot"], cons:["Modest power for full load","Basic ride quality"]},
+  {id:7, make:"Hyundai", model:"Creta", price:15.5, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:17.4, unit:"kmpl", pros:["Segment benchmark cabin quality","Strong resale value","Refined ride"], cons:["Real-world mileage modest","Pricey top variants"]},
+  {id:8, make:"Toyota", model:"Innova Hycross Hybrid", price:24.7, fuel:"Hybrid", trans:"Automatic", body:"MPV", seats:7, mileage:23.2, unit:"kmpl", pros:["Excellent fuel economy for size","Bulletproof reliability","Best-in-class 2nd row"], cons:["High waiting period historically","Premium price"]},
+  {id:9, make:"Mahindra", model:"Scorpio-N", price:16.0, fuel:"Diesel", trans:"Manual", body:"SUV", seats:7, mileage:15.2, unit:"kmpl", pros:["Strong low-end torque","Commanding road presence","Genuine 4x4 option"], cons:["Heavy on fuel in city","Large footprint to park"]},
+  {id:10, make:"Skoda", model:"Slavia", price:13.8, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:18.7, unit:"kmpl", pros:["European-tuned handling","Strong build quality","Punchy turbo-petrol"], cons:["Tighter rear headroom","Service network smaller"]},
+  {id:11, make:"Tata", model:"Nexon EV", price:14.5, fuel:"Electric", trans:"Automatic", body:"SUV", seats:5, mileage:325, unit:"km/charge", pros:["Zero running fuel cost","Instant torque, quiet cabin","Good charging network support"], cons:["Charging time on regular AC","Range drops in winter/AC use"]},
+  {id:12, make:"Volkswagen", model:"Virtus", price:12.9, fuel:"Petrol", trans:"Manual", body:"Sedan", seats:5, mileage:19.4, unit:"kmpl", pros:["Planted highway handling","Solid build feel","Strong turbo-petrol performance"], cons:["Firmer ride than rivals","Rear seat width modest"]},
+  {id:13, make:"MG", model:"Astor", price:14.2, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:14.2, unit:"kmpl", pros:["AI voice assistant + ADAS suite","Panoramic sunroof standard from mid variant","Spacious cabin"], cons:["Below-average fuel efficiency","Ride can feel floaty"]},
+  {id:14, make:"Renault", model:"Kwid", price:4.7, fuel:"Petrol", trans:"Manual", body:"Hatchback", seats:5, mileage:22.3, unit:"kmpl", pros:["SUV-inspired styling at low price","Light steering, easy to drive","Digital instrument cluster"], cons:["Basic ride comfort","Limited safety kit on base variants"]},
+];
+
+const BODY_COLORS = {Hatchback:"#4fd1c5", Sedan:"#f2a93b", SUV:"#e2574c", MPV:"#9b8cff"};
+
+/* ============================= BACKEND CONFIG ============================= */
+// Points at the local Node.js backend (see /vindex-backend). Change this if you
+// deploy the backend somewhere else later.
+const API_BASE = 'http://localhost:3001/api';
+
+/* ============================= STATE ============================= */
+const state = {
+  wishlist: new Set(),
+  compare: new Set(),
+  quiz: {budget:12, usage:null, family:null, fuel:null},
+  quizStep: 1,
+  user: null,
+  token: localStorage.getItem('vindex_token') || null,
+  authMode: 'signin'
+};
+
+/* ============================= CAR SVG ============================= */
+function carSVG(color){
+  return `<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 68 Q18 50 34 46 L56 30 Q66 22 82 22 L128 22 Q142 22 152 32 L168 46 Q184 48 184 66 L184 74 Q184 80 178 80 L166 80 Q164 90 152 90 Q140 90 138 80 L64 80 Q62 90 50 90 Q38 90 36 80 L22 80 Q18 80 18 74 Z"
+      fill="${color}" opacity="0.9"/>
+    <path d="M64 46 L74 30 Q78 26 84 26 L118 26 Q124 26 128 30 L138 46 Z" fill="#12161b" opacity="0.55"/>
+    <circle cx="50" cy="80" r="11" fill="#12161b"/><circle cx="50" cy="80" r="5" fill="#8a93a0"/>
+    <circle cx="152" cy="80" r="11" fill="#12161b"/><circle cx="152" cy="80" r="5" fill="#8a93a0"/>
+  </svg>`;
+}
+
+/* ============================= NAV / VIEWS ============================= */
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('nav.links button').forEach(b=>b.classList.toggle('active', b.dataset.view===id));
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(id==='browse') renderBrowse();
+  if(id==='compareView') renderCompareView();
+  if(id==='wishlist') renderWishlist();
+}
+
+/* ============================= INIT / HOME ============================= */
+function populateFilterOptions(){
+  const brands = [...new Set(CARS.map(c=>c.make))].sort();
+  const fuels = [...new Set(CARS.map(c=>c.fuel))].sort();
+  const trans = [...new Set(CARS.map(c=>c.trans))].sort();
+  const bodies = [...new Set(CARS.map(c=>c.body))].sort();
+  fillSelect('f-brand', brands);
+  fillSelect('f-fuel', fuels);
+  fillSelect('f-trans', trans);
+  fillSelect('f-body', bodies);
+  document.getElementById('statTotal').textContent = CARS.length;
+  document.getElementById('statBrands').textContent = brands.length;
+}
+function fillSelect(id, arr){
+  const sel = document.getElementById(id);
+  arr.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
+}
+
+function cardHTML(car){
+  const color = BODY_COLORS[car.body];
+  const isFav = state.wishlist.has(car.id);
+  const isCmp = state.compare.has(car.id);
+  return `
+  <div class="car-card">
+    <div class="car-media" style="background:radial-gradient(circle at 50% 30%, ${color}22, transparent 70%);">
+      <span class="body-tag">${car.body}</span>
+      <button class="fav-btn ${isFav?'active':''}" onclick="toggleWishlist(${car.id})" aria-label="Save to wishlist">${isFav?'♥':'♡'}</button>
+      ${carSVG(color)}
+    </div>
+    <div class="car-body">
+      <h3 class="car-title" onclick="openDetail(${car.id})">${car.make} ${car.model}</h3>
+      <div class="car-sub">${car.fuel} · ${car.trans} · ${car.seats} seats</div>
+      <div class="car-price">₹${car.price.toFixed(1)}L</div>
+      <div class="spec-mini"><span>${car.mileage} ${car.unit}</span></div>
+      <div class="car-actions">
+        <button onclick="openDetail(${car.id})">Details</button>
+        <button class="${isCmp?'on':''}" onclick="toggleCompare(${car.id})">${isCmp?'✓ Comparing':'+ Compare'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderHome(){
+  populateFilterOptions();
+  const featured = CARS.slice(0,3);
+  document.getElementById('homeFeatured').innerHTML = featured.map(cardHTML).join('');
+}
+
+/* ============================= BROWSE ============================= */
+function renderBrowse(){
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const brand = document.getElementById('f-brand').value;
+  const fuel = document.getElementById('f-fuel').value;
+  const trans = document.getElementById('f-trans').value;
+  const body = document.getElementById('f-body').value;
+  const maxPrice = parseFloat(document.getElementById('f-price').value);
+  document.getElementById('priceLabel').textContent = '₹'+maxPrice+'L';
+
+  const filtered = CARS.filter(c=>{
+    if(search && !(`${c.make} ${c.model}`.toLowerCase().includes(search))) return false;
+    if(brand && c.make!==brand) return false;
+    if(fuel && c.fuel!==fuel) return false;
+    if(trans && c.trans!==trans) return false;
+    if(body && c.body!==body) return false;
+    if(c.price>maxPrice) return false;
+    return true;
+  });
+
+  document.getElementById('browseNum').textContent = filtered.length+' / '+CARS.length;
+  document.getElementById('browseCount').textContent = `Showing ${filtered.length} of ${CARS.length} cars`;
+  const grid = document.getElementById('browseGrid');
+  grid.innerHTML = filtered.length ? filtered.map(cardHTML).join('') : `<div class="empty-state" style="grid-column:1/-1;">No cars match these filters. Try widening your budget or clearing a filter.</div>`;
+}
+function resetFilters(){
+  document.getElementById('f-search').value='';
+  document.getElementById('f-brand').value='';
+  document.getElementById('f-fuel').value='';
+  document.getElementById('f-trans').value='';
+  document.getElementById('f-body').value='';
+  document.getElementById('f-price').value=45;
+  renderBrowse();
+}
+
+/* ============================= WISHLIST / COMPARE toggles ============================= */
+function toggleWishlist(id){
+  const nowSaved = !state.wishlist.has(id);
+  if(nowSaved) state.wishlist.add(id); else state.wishlist.delete(id);
+  refreshWishBadge();
+  reRenderVisible();
+
+  // If signed in, persist the change to the customer's account on the backend
+  if(state.token){
+    const req = nowSaved
+      ? fetch(`${API_BASE}/wishlist`, { method:'POST', headers: authHeaders(), body: JSON.stringify({carId:id}) })
+      : fetch(`${API_BASE}/wishlist/${id}`, { method:'DELETE', headers: authHeaders() });
+    req.catch(()=>{ /* offline/backend down — keep the local change, just don't sync */ });
+  }
+}
+function refreshWishBadge(){
+  const c = state.wishlist.size;
+  const b = document.getElementById('wishCount');
+  b.style.display = c? 'inline-flex':'none';
+  b.textContent = c;
+}
+function toggleCompare(id){
+  if(state.compare.has(id)){ state.compare.delete(id); }
+  else{
+    if(state.compare.size>=3){ alert('You can compare up to 3 cars at a time. Remove one first.'); return; }
+    state.compare.add(id);
+  }
+  refreshCompareBar();
+  reRenderVisible();
+}
+function clearCompare(){ state.compare.clear(); refreshCompareBar(); reRenderVisible(); }
+function refreshCompareBar(){
+  const bar = document.getElementById('compareBar');
+  const n = state.compare.size;
+  bar.classList.toggle('show', n>0);
+  document.getElementById('compareBarText').textContent = n+(n===1?' car selected':' cars selected');
+}
+function reRenderVisible(){
+  const active = document.querySelector('.view.active').id.replace('view-','');
+  if(active==='home') renderHome();
+  if(active==='browse') renderBrowse();
+  if(active==='wishlist') renderWishlist();
+  if(active==='compareView') renderCompareView();
+}
+
+/* ============================= WISHLIST VIEW ============================= */
+function renderWishlist(){
+  const cars = CARS.filter(c=>state.wishlist.has(c.id));
+  document.getElementById('wishNum').textContent = cars.length+' saved';
+  document.getElementById('wishEmpty').style.display = cars.length? 'none':'block';
+  document.getElementById('wishGrid').innerHTML = cars.map(cardHTML).join('');
+}
+
+/* ============================= DETAIL MODAL ============================= */
+function openDetail(id){
+  const c = CARS.find(x=>x.id===id);
+  const color = BODY_COLORS[c.body];
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-media" style="background:radial-gradient(circle at 50% 35%, ${color}22, transparent 70%);">${carSVG(color)}</div>
+    <h2>${c.make} ${c.model}</h2>
+    <div class="car-sub">${c.body} · ${c.fuel} · ${c.trans}</div>
+    <div class="detail-price">₹${c.price.toFixed(1)}L <span style="font-size:12px; color:var(--muted); font-weight:400;">on-road (est.)</span></div>
+    <div class="spec-grid">
+      <div class="spec-box"><b>${c.seats}</b><span>Seats</span></div>
+      <div class="spec-box"><b>${c.mileage}</b><span>${c.unit}</span></div>
+      <div class="spec-box"><b>${c.trans}</b><span>Gearbox</span></div>
+    </div>
+    <div class="pc-grid">
+      <div class="pc-col pro"><h5>Pros</h5><ul>${c.pros.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+      <div class="pc-col con"><h5>Cons</h5><ul>${c.cons.map(p=>`<li>${p}</li>`).join('')}</ul></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ${state.wishlist.has(c.id)?'btn-outline':'btn-amber'}" onclick="toggleWishlist(${c.id}); openDetail(${c.id});">${state.wishlist.has(c.id)?'♥ Saved to wishlist':'♡ Save to wishlist'}</button>
+      <button class="btn btn-outline" onclick="toggleCompare(${c.id}); openDetail(${c.id});">${state.compare.has(c.id)?'✓ In compare':'+ Add to compare'}</button>
+    </div>`;
+  document.getElementById('detailOverlay').classList.add('show');
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('show'); }
+
+/* ============================= QUIZ ============================= */
+function startQuiz(){
+  state.quizStep = 1;
+  state.quiz = {budget: parseInt(document.getElementById('q-budget').value)||12, usage:null, family:null, fuel:null};
+  document.querySelectorAll('.q-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-1').classList.add('active');
+  document.querySelectorAll('.opt-card').forEach(o=>o.classList.remove('sel'));
+  updateQuizProgress();
+  showView('quiz');
+}
+function updateQuizProgress(){
+  for(let i=1;i<=4;i++) document.getElementById('qp'+i).classList.toggle('done', i<=state.quizStep);
+}
+function selectOpt(btn, group){
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.opt-card').forEach(o=>o.classList.remove('sel'));
+  btn.classList.add('sel');
+  state.quiz[group] = btn.dataset.val;
+}
+function quizNext(fromStep){
+  if(fromStep===2 && !state.quiz.usage){ alert('Pick a driving pattern to continue.'); return; }
+  if(fromStep===3 && !state.quiz.family){ alert('Pick a group size to continue.'); return; }
+  if(fromStep===1) state.quiz.budget = parseInt(document.getElementById('q-budget').value);
+  document.getElementById('step-'+fromStep).classList.remove('active');
+  state.quizStep = fromStep+1;
+  document.getElementById('step-'+state.quizStep).classList.add('active');
+  updateQuizProgress();
+}
+function quizBack(fromStep){
+  document.getElementById('step-'+fromStep).classList.remove('active');
+  state.quizStep = fromStep-1;
+  document.getElementById('step-'+state.quizStep).classList.add('active');
+  updateQuizProgress();
+}
+function submitQuiz(){
+  if(!state.quiz.fuel){ alert('Pick a fuel preference (or "No preference") to see results.'); return; }
+  const {budget, usage, family, fuel} = state.quiz;
+  const familyNum = parseInt(family);
+  const usageBodyMap = {
+    city:['Hatchback','Sedan'], highway:['Sedan','SUV'], mixed:['SUV','MPV'], offroad:['SUV']
+  };
+  const scored = CARS.map(c=>{
+    let score = 0;
+    if(c.price<=budget) score += 40; else score += Math.max(0, 40-(c.price-budget)*5);
+    if(c.seats>=familyNum) score += 20; else score -= 12;
+    if(fuel==='any' || c.fuel===fuel) score += 25;
+    if(usageBodyMap[usage] && usageBodyMap[usage].includes(c.body)) score += 15; else score += 4;
+    score = Math.max(0, Math.min(100, Math.round(score)));
+    return {...c, score};
+  }).sort((a,b)=>b.score-a.score).slice(0,5);
+
+  document.getElementById('resultsSummary').textContent =
+    `Budget ₹${budget}L · ${usageLabel(usage)} · ${familyLabel(family)} · ${fuel==='any'?'no fuel preference':fuel+' preferred'}`;
+  document.getElementById('resultsList').innerHTML = scored.map(c=>resultRow(c)).join('');
+  showView('results');
+}
+function usageLabel(v){ return {city:'City commute', highway:'Highway driving', mixed:'Mixed use', offroad:'Rough roads / off-road'}[v]||v; }
+function familyLabel(v){ return {2:'1–2 people', 4:'3–4 people', 6:'5–6 people', 7:'7+ people'}[v]||v+' people'; }
+
+function resultRow(c){
+  const color = BODY_COLORS[c.body];
+  const r=44, circ = 2*Math.PI*r, offset = circ*(1-c.score/100);
+  const isFav = state.wishlist.has(c.id);
+  const isCmp = state.compare.has(c.id);
+  return `<div class="res-car">
+    <div class="car-media" style="background:radial-gradient(circle at 50% 30%, ${color}22, transparent 70%);">${carSVG(color)}</div>
+    <div class="res-info">
+      <h4>${c.make} ${c.model}</h4>
+      <div class="car-sub">₹${c.price.toFixed(1)}L · ${c.fuel} · ${c.trans} · ${c.seats} seats</div>
+      <div class="why">${matchReason(c)}</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="gauge-wrap">
+        <svg width="66" height="66" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#232b34" stroke-width="8"/>
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="${scoreColor(c.score)}" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 50 50)"/>
+          <text x="50" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="22" fill="#edeff2" font-weight="700">${c.score}</text>
+        </svg>
+        <span>Match</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <button class="pill-btn" onclick="openDetail(${c.id})">Details</button>
+        <button class="pill-btn ${isFav?'primary':''}" onclick="toggleWishlist(${c.id}); submitQuiz();">${isFav?'♥ Saved':'♡ Save'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function scoreColor(s){ return s>=75? '#4fd1c5' : s>=50? '#f2a93b' : '#e2574c'; }
+function matchReason(c){
+  const bits=[];
+  if(c.price<=state.quiz.budget) bits.push('within budget');
+  if(c.seats>=parseInt(state.quiz.family)) bits.push('fits your group');
+  if(state.quiz.fuel!=='any' && c.fuel===state.quiz.fuel) bits.push('preferred fuel');
+  return bits.length? 'Matches: '+bits.join(', ') : 'Closest overall fit';
+}
+
+/* ============================= COMPARE VIEW ============================= */
+function renderCompareView(){
+  const cars = CARS.filter(c=>state.compare.has(c.id));
+  document.getElementById('compareNum').textContent = cars.length+' / 3 selected';
+  document.getElementById('compareEmpty').style.display = cars.length? 'none':'block';
+  if(!cars.length){ document.getElementById('compareTableWrap').innerHTML=''; return; }
+
+  const rows = [
+    {label:'Price', get:c=>c.price, fmt:v=>'₹'+v.toFixed(1)+'L', lowerBetter:true},
+    {label:'Body type', get:c=>c.body, fmt:v=>v},
+    {label:'Fuel type', get:c=>c.fuel, fmt:v=>v},
+    {label:'Transmission', get:c=>c.trans, fmt:v=>v},
+    {label:'Seating', get:c=>c.seats, fmt:v=>v+' seats', lowerBetter:false},
+    {label:'Mileage / range', get:c=>c.mileage, fmt:(v,c)=>v+' '+c.unit, lowerBetter:false},
+  ];
+
+  let html = `<table class="compare-table"><thead><tr><th></th>`;
+  cars.forEach(c=>{
+    html += `<th><div class="colhead"><b>${c.make} ${c.model}</b><button class="remove-col" onclick="toggleCompare(${c.id})">Remove</button></div></th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(r=>{
+    const vals = cars.map(c=>r.get(c));
+    let bestIdx = -1;
+    if(typeof vals[0]==='number'){
+      const nums = vals;
+      bestIdx = r.lowerBetter ? nums.indexOf(Math.min(...nums)) : nums.indexOf(Math.max(...nums));
+    }
+    html += `<tr><td class="label">${r.label}</td>`;
+    cars.forEach((c,i)=>{
+      const display = r.fmt(vals[i], c);
+      html += `<td class="${i===bestIdx?'best-val':''}">${display}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `<tr><td class="label">Pros</td>`;
+  cars.forEach(c=>{ html += `<td><ul style="margin:0; padding-left:16px; font-size:12.5px; color:var(--teal);">${c.pros.map(p=>`<li>${p}</li>`).join('')}</ul></td>`; });
+  html += `</tr><tr><td class="label">Cons</td>`;
+  cars.forEach(c=>{ html += `<td><ul style="margin:0; padding-left:16px; font-size:12.5px; color:var(--red);">${c.cons.map(p=>`<li>${p}</li>`).join('')}</ul></td>`; });
+  html += `</tr></tbody></table>`;
+
+  document.getElementById('compareTableWrap').innerHTML = html;
+}
+
+/* ============================= AUTH (backed by the Node.js API + SQLite database) ============================= */
+function authHeaders(){
+  return { 'Content-Type':'application/json', 'Authorization': `Bearer ${state.token}` };
+}
+function openLogin(){
+  setAuthError('');
+  document.getElementById('loginOverlay').classList.add('show');
+}
+function closeLogin(){ document.getElementById('loginOverlay').classList.remove('show'); }
+function setAuthTab(mode){
+  state.authMode = mode;
+  setAuthError('');
+  document.getElementById('tabSignin').classList.toggle('active', mode==='signin');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('authName').style.display = mode==='signup' ? 'block':'none';
+  document.getElementById('authTitle').textContent = mode==='signup' ? 'Create your account' : 'Welcome back';
+  document.getElementById('authSubmit').textContent = mode==='signup' ? 'Create account' : 'Sign in';
+}
+function setAuthError(msg){
+  const el = document.getElementById('authError');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+async function doAuth(){
+  const email = document.getElementById('authEmail').value.trim();
+  const name = document.getElementById('authName').value.trim();
+  const password = document.getElementById('authPass').value;
+  const isSignup = state.authMode === 'signup';
+
+  if(!email || !password){ setAuthError('Enter an email and password to continue.'); return; }
+  if(isSignup && !name){ setAuthError('Enter your full name to create an account.'); return; }
+
+  const submitBtn = document.getElementById('authSubmit');
+  submitBtn.disabled = true;
+  setAuthError('');
+
+  try{
+    const path = isSignup ? 'signup' : 'login';
+    const body = isSignup ? {name, email, password} : {email, password};
+    const res = await fetch(`${API_BASE}/auth/${path}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok){ setAuthError(data.error || 'Something went wrong.'); return; }
+
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem('vindex_token', state.token);
+    updateLoginButton();
+    await loadWishlistFromServer();
+    closeLogin();
+  }catch(err){
+    setAuthError('Could not reach the server. Is the backend running (npm start in vindex-backend)?');
+  }finally{
+    submitBtn.disabled = false;
+  }
+}
+function logout(){
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('vindex_token');
+  updateLoginButton();
+}
+function updateLoginButton(){
+  const btn = document.getElementById('loginBtn');
+  if(state.user){
+    btn.textContent = state.user.name;
+    btn.onclick = logout;
+    btn.title = 'Click to sign out';
+  }else{
+    btn.textContent = 'Sign in';
+    btn.onclick = openLogin;
+    btn.title = '';
+  }
+}
+async function loadWishlistFromServer(){
+  if(!state.token) return;
+  try{
+    const res = await fetch(`${API_BASE}/wishlist`, { headers: authHeaders() });
+    if(!res.ok) return; // e.g. expired token — leave local wishlist as-is
+    const data = await res.json();
+    state.wishlist = new Set(data.carIds);
+    refreshWishBadge();
+    reRenderVisible();
+  }catch(err){ /* backend not running — keep whatever is in local state */ }
+}
+async function restoreSession(){
+  if(!state.token) return;
+  try{
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+    if(!res.ok){ logout(); return; }
+    const data = await res.json();
+    state.user = data.user;
+    updateLoginButton();
+    await loadWishlistFromServer();
+  }catch(err){ /* backend not running yet — stay signed out until it is */ }
+}
+
+/* ============================= INIT ============================= */
+renderHome();
+refreshWishBadge();
+refreshCompareBar();
+updateLoginButton();
+restoreSession();
+</script>
+</body>
+</html>
