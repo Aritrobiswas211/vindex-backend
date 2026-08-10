@@ -418,7 +418,7 @@
     </div>
     <div class="field" style="margin:-10px 0 18px; max-width:320px;">
       <label>Max price — <span id="priceLabel" style="color:var(--amber); font-family:var(--mono);">₹45L</span></label>
-      <input type="range" id="f-price" min="4" max="45" value="45" oninput="renderBrowse()">
+      <input type="range" id="f-price" min="4" max="800" value="45" oninput="renderBrowse()">
     </div>
     <div class="result-count" id="browseCount"></div>
     <div class="grid" id="browseGrid"></div>
@@ -566,14 +566,77 @@ const CARS = [
   {id:12, make:"Volkswagen", model:"Virtus", price:12.9, fuel:"Petrol", trans:"Manual", body:"Sedan", seats:5, mileage:19.4, unit:"kmpl", pros:["Planted highway handling","Solid build feel","Strong turbo-petrol performance"], cons:["Firmer ride than rivals","Rear seat width modest"]},
   {id:13, make:"MG", model:"Astor", price:14.2, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:14.2, unit:"kmpl", pros:["AI voice assistant + ADAS suite","Panoramic sunroof standard from mid variant","Spacious cabin"], cons:["Below-average fuel efficiency","Ride can feel floaty"]},
   {id:14, make:"Renault", model:"Kwid", price:4.7, fuel:"Petrol", trans:"Manual", body:"Hatchback", seats:5, mileage:22.3, unit:"kmpl", pros:["SUV-inspired styling at low price","Light steering, easy to drive","Digital instrument cluster"], cons:["Basic ride comfort","Limited safety kit on base variants"]},
+  {id:15, make:"Maruti Suzuki", model:"Swift", price:6.5, fuel:"Petrol", trans:"Manual", body:"Hatchback", seats:5, mileage:22.4, unit:"kmpl", pros:["Fun-to-drive handling","Excellent resale value","Very low maintenance cost"], cons:["Firm rear seat for 3","Road noise at highway speed"]},
+  {id:16, make:"Maruti Suzuki", model:"Baleno", price:8.5, fuel:"Petrol", trans:"Automatic", body:"Hatchback", seats:5, mileage:22.9, unit:"kmpl", pros:["Premium hatchback cabin","Spacious for the segment","Strong dealer network"], cons:["Rear headroom modest","No diesel option"]},
+  {id:17, make:"Maruti Suzuki", model:"Brezza", price:9.5, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:19.8, unit:"kmpl", pros:["Reliable, low running cost","Good ground clearance","Strong resale value"], cons:["No diesel or AWD option","Engine feels stressed at highway speed"]},
+  {id:18, make:"Hyundai", model:"Venue", price:11.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:18.2, unit:"kmpl", pros:["Feature loaded for the price","Turbo-petrol is punchy","Compact, easy to park"], cons:["Rear seat tight for 3 adults","Ride slightly firm"]},
+  {id:19, make:"Hyundai", model:"Verna", price:11.5, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:18.6, unit:"kmpl", pros:["Sharp styling, sporty handling","Loaded feature list","ADAS on higher trims"], cons:["Boot lip is high","Ride firmer than rivals"]},
+  {id:20, make:"Honda", model:"City", price:12.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:18.4, unit:"kmpl", pros:["Best-in-class rear seat room","Refined, smooth engine","Reliable long-term"], cons:["Suspension feels busy on bad roads","Infotainment feels dated"]},
+  {id:21, make:"Honda", model:"Elevate", price:12.5, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:16.9, unit:"kmpl", pros:["Honda reliability in an SUV body","Comfortable ride","Strong safety kit"], cons:["No diesel or hybrid yet","Modest boot space"]},
+  {id:22, make:"Mahindra", model:"Thar", price:14.0, fuel:"Diesel", trans:"Manual", body:"SUV", seats:4, mileage:15.1, unit:"kmpl", pros:["Genuine off-road capability","Iconic styling, strong resale","Convertible top option"], cons:["Compromised city practicality","Noisy and firm on highway"]},
+  {id:23, make:"Mahindra", model:"XUV300", price:9.0, fuel:"Petrol", trans:"Manual", body:"SUV", seats:5, mileage:17.0, unit:"kmpl", pros:["5-star safety rating","Punchy turbo-petrol engine","Well-equipped cabin"], cons:["Small fuel tank","Rear seat legroom modest"]},
+  {id:24, make:"Mahindra", model:"XUV700", price:24.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:7, mileage:16.5, unit:"kmpl", pros:["ADAS Level 2 on top trims","Powerful diesel engine","Feature-rich, huge screens"], cons:["Heavy at low speed maneuvering","Long waiting periods historically"]},
+  {id:25, make:"Tata", model:"Harrier", price:22.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:16.8, unit:"kmpl", pros:["Commanding road presence","5-star safety rating","Comfortable long-distance ride"], cons:["No petrol engine option","Infotainment can lag"]},
+  {id:26, make:"Tata", model:"Safari", price:23.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:7, mileage:16.1, unit:"kmpl", pros:["Genuine 7-seat comfort","5-star safety rating","Commanding driving position"], cons:["3rd row best for kids","No petrol option"]},
+  {id:27, make:"Toyota", model:"Fortuner", price:38.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:7, mileage:12.4, unit:"kmpl", pros:["Legendary reliability","Strong body-on-frame for tough roads","Huge resale value"], cons:["Poor city mileage","Large turning radius"]},
+  {id:28, make:"Toyota", model:"Glanza", price:8.5, fuel:"Petrol", trans:"Automatic", body:"Hatchback", seats:5, mileage:22.3, unit:"kmpl", pros:["Toyota reliability badge","Strong resale value","Efficient engine"], cons:["Rebadged Baleno, limited differentiation","No diesel option"]},
+  {id:29, make:"Kia", model:"Seltos", price:13.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:16.8, unit:"kmpl", pros:["Bold styling stands out","Feature-rich across trims","Punchy turbo-petrol available"], cons:["Firm ride on bad roads","Road noise at speed"]},
+  {id:30, make:"Kia", model:"Carens", price:13.5, fuel:"Diesel", trans:"Automatic", body:"MPV", seats:7, mileage:19.5, unit:"kmpl", pros:["Flexible 6/7-seat layouts","Comfortable diesel for highways","Feature-loaded cabin"], cons:["3rd row best for shorter trips","Diesel unavailable on lower trims"]},
+  {id:31, make:"MG", model:"Hector", price:17.5, fuel:"Diesel", trans:"Manual", body:"SUV", seats:5, mileage:15.5, unit:"kmpl", pros:["Massive touchscreen and feature list","Spacious cabin","Distinct road presence"], cons:["Reliability concerns reported","Heavy fuel consumption"]},
+  {id:32, make:"Skoda", model:"Kushaq", price:13.2, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:18.0, unit:"kmpl", pros:["European ride and handling","Strong build quality","Punchy turbo-petrol engines"], cons:["Smaller service network","Rear seat width modest"]},
+  {id:33, make:"Volkswagen", model:"Taigun", price:13.6, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:17.8, unit:"kmpl", pros:["Planted, confident handling","Solid build quality","Strong turbo-petrol performance"], cons:["Firmer ride than rivals","Smaller service network"]},
+  {id:34, make:"Nissan", model:"Magnite", price:8.5, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:19.9, unit:"kmpl", pros:["Affordable SUV styling","Turbo engine feels lively","Good ground clearance"], cons:["Cabin plastics feel basic","Limited service network"]},
+  {id:35, make:"Renault", model:"Triber", price:7.3, fuel:"Petrol", trans:"Manual", body:"MPV", seats:7, mileage:19.0, unit:"kmpl", pros:["Cheapest way into 7 seats","Flexible, removable seating","Easy to drive in the city"], cons:["3rd row tight for adults","Underpowered with full load"]},
+  {id:36, make:"Toyota", model:"Camry Hybrid", price:48.0, fuel:"Hybrid", trans:"Automatic", body:"Sedan", seats:5, mileage:23.0, unit:"kmpl", pros:["Silent, efficient hybrid drivetrain","Excellent long-term reliability","Comfortable, plush ride"], cons:["Conservative styling","Premium price for a sedan"]},
+  {id:37, make:"Mercedes-Benz", model:"C-Class", price:60.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:14.0, unit:"kmpl", pros:["Premium cabin materials","Refined turbo-petrol engine","Strong badge value"], cons:["Expensive maintenance","Rear seat room modest for class"]},
+  {id:38, make:"BMW", model:"3 Series", price:58.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:15.6, unit:"kmpl", pros:["Sharp, engaging handling","Strong turbo-petrol performance","Driver-focused cabin"], cons:["Firm ride on bad roads","Expensive parts and service"]},
+  {id:56, make:"BMW", model:"5 Series", price:75.0, fuel:"Diesel", trans:"Automatic", body:"Sedan", seats:5, mileage:16.9, unit:"kmpl", pros:["Excellent blend of comfort and handling","Refined diesel engine options","Spacious, tech-forward cabin"], cons:["Pricier than key rivals","Options can add up quickly"]},
+  {id:57, make:"BMW", model:"X3", price:68.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:16.2, unit:"kmpl", pros:["Sporty handling for a compact SUV","Punchy, efficient diesel engine","Premium cabin quality"], cons:["Tight-ish 3rd row absent","Ride firm on 19-inch wheels"]},
+  {id:58, make:"BMW", model:"M340i", price:78.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:12.9, unit:"kmpl", pros:["Genuinely fast, engaging drive","Everyday-usable performance sedan","Aggressive but tasteful styling"], cons:["Firm sports suspension","High fuel and tyre costs"]},
+  {id:39, make:"BMW", model:"X5", price:93.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:13.5, unit:"kmpl", pros:["Powerful, refined diesel engine","Excellent build quality","Strong highway comfort"], cons:["High running and service costs","Large footprint in city traffic"]},
+  {id:40, make:"Audi", model:"Q5", price:65.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:13.8, unit:"kmpl", pros:["Understated, premium design","Quattro AWD confidence","Well-built, quiet cabin"], cons:["Smaller service network","Depreciation is steep"]},
+  {id:59, make:"Audi", model:"A4", price:46.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:16.0, unit:"kmpl", pros:["Understated executive styling","Smooth turbo-petrol engine","Quattro AWD on select trims"], cons:["Rear seat room modest for class","Infotainment feels a generation behind"]},
+  {id:60, make:"Audi", model:"A6", price:63.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:15.2, unit:"kmpl", pros:["Elegant, tech-forward cabin","Comfortable long-distance cruiser","Strong Quattro AWD grip"], cons:["Conservative styling for the segment","Expensive scheduled maintenance"]},
+  {id:61, make:"Audi", model:"Q7", price:88.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:7, mileage:12.9, unit:"kmpl", pros:["Genuine 7-seat luxury SUV","Refined, powerful diesel V6","Premium quattro AWD confidence"], cons:["Large footprint for city use","High cost of ownership"]},
+  {id:62, make:"Audi", model:"RS5", price:1.10*100, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:4, mileage:9.5, unit:"kmpl", pros:["Twin-turbo V6 performance","Everyday-usable performance coupe","Quattro AWD traction"], cons:["Very high maintenance cost","Firm performance-tuned ride"]},
+  {id:63, make:"Lamborghini", model:"Aventador", price:520.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:2, mileage:5.2, unit:"kmpl", pros:["Naturally-aspirated V12 theatre","Flagship halo-car status","Unmistakable scissor-door design"], cons:["Extremely impractical daily","Astronomical running and parts cost"]},
+  {id:64, make:"Lamborghini", model:"Revuelto", price:850.0, fuel:"Hybrid", trans:"Automatic", body:"Coupe", seats:2, mileage:6.0, unit:"kmpl", pros:["V12 hybrid hypercar performance","Cutting-edge technology","Ultimate flagship exclusivity"], cons:["Extremely limited availability in India","Highest ownership cost in the lineup"]},
+  {id:41, make:"Jaguar", model:"F-Pace", price:72.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:12.6, unit:"kmpl", pros:["Sporty handling for an SUV","Distinctive design","Strong performance engines"], cons:["Reliability concerns reported","Very limited service centers"]},
+  {id:42, make:"Land Rover", model:"Range Rover Evoque", price:65.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:14.1, unit:"kmpl", pros:["Head-turning design","Capable off-road for a luxury SUV","Premium cabin feel"], cons:["High maintenance costs","Infotainment can be glitchy"]},
+  {id:43, make:"Volvo", model:"XC60", price:68.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:13.9, unit:"kmpl", pros:["Best-in-class safety systems","Understated Scandinavian design","Comfortable, quiet cabin"], cons:["Smaller dealer network","Firm low-speed ride"]},
+  {id:44, make:"Lexus", model:"ES", price:65.0, fuel:"Hybrid", trans:"Automatic", body:"Sedan", seats:5, mileage:20.0, unit:"kmpl", pros:["Legendary Toyota-group reliability","Whisper-quiet hybrid cabin","Excellent ownership experience"], cons:["Conservative styling","Very few service centers"]},
+  {id:45, make:"Porsche", model:"Macan", price:92.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:11.5, unit:"kmpl", pros:["Genuinely sporty to drive","Strong build and materials","Distinct Porsche badge value"], cons:["Very expensive servicing","Firm ride on Indian roads"]},
+  {id:46, make:"Mercedes-Benz", model:"S-Class", price:170.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:11.2, unit:"kmpl", pros:["Flagship luxury and technology","Exceptionally comfortable rear seat","Class-leading refinement"], cons:["Very high running costs","Massive depreciation"]},
+  {id:47, make:"BMW", model:"7 Series", price:172.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:11.0, unit:"kmpl", pros:["Tech-forward flagship cabin","Powerful, refined engines","Chauffeur-friendly rear space"], cons:["Polarizing styling","Very high maintenance cost"]},
+  {id:48, make:"Land Rover", model:"Range Rover", price:240.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:10.5, unit:"kmpl", pros:["Ultimate luxury SUV presence","Genuine off-road capability","Serene, isolated cabin"], cons:["Extremely high running costs","Historically patchy reliability"]},
+  {id:49, make:"Porsche", model:"911", price:210.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:4, mileage:9.8, unit:"kmpl", pros:["Iconic sports car handling","Everyday usable performance car","Strong resale for a sports car"], cons:["Very limited practicality","Expensive servicing"]},
+  {id:50, make:"Lamborghini", model:"Huracan", price:380.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:2, mileage:6.5, unit:"kmpl", pros:["Screaming naturally-aspirated V10","Exotic, head-turning design","Track-capable performance"], cons:["Impractical for daily use","Extremely high running costs"]},
+  {id:51, make:"Lamborghini", model:"Urus", price:420.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:7.8, unit:"kmpl", pros:["Supercar performance in an SUV body","Usable as a daily driver","Massive presence on the road"], cons:["Very poor fuel economy","Extremely expensive to maintain"]},
+  {id:52, make:"Ferrari", model:"Roma", price:460.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:2, mileage:6.8, unit:"kmpl", pros:["Elegant grand-touring design","Blistering turbo-V8 performance","Prestigious badge value"], cons:["Very limited service network in India","Not practical for daily driving"]},
+  {id:53, make:"Rolls-Royce", model:"Ghost", price:750.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:8.2, unit:"kmpl", pros:["Ultimate ride comfort and silence","Bespoke luxury craftsmanship","Unmatched prestige"], cons:["Astronomical running costs","Massive size for city driving"]},
+  {id:65, make:"Rolls-Royce", model:"Cullinan", price:920.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:7.5, unit:"kmpl", pros:["Most luxurious SUV on sale","Effortless V12 power","Commands respect on any road"], cons:["Extremely high ownership cost","Very large footprint"]},
+  {id:66, make:"Volvo", model:"XC40 Recharge", price:56.0, fuel:"Electric", trans:"Automatic", body:"SUV", seats:5, mileage:418, unit:"km/charge", pros:["Compact, city-friendly luxury EV","Top-tier safety rating","Sharp, minimalist design"], cons:["Charging infra still developing","Firm ride on bad roads"]},
+  {id:55, make:"Aston Martin", model:"DB12", price:440.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:4, mileage:7.5, unit:"kmpl", pros:["Beautiful hand-built design","Thunderous twin-turbo V8","Exclusive, low-volume badge"], cons:["Very limited India service support","High cost of ownership"]},
+  {id:67, make:"Aston Martin", model:"Vantage", price:350.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:2, mileage:8.0, unit:"kmpl", pros:["Focused, agile sports car handling","Aggressive, muscular styling","Strong twin-turbo V8"], cons:["Very limited practicality","Sparse service network in India"]},
+  {id:68, make:"Jaguar", model:"F-Type", price:145.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:2, mileage:8.5, unit:"kmpl", pros:["Gorgeous sports car styling","Snarling supercharged V8 available","Engaging, sharp handling"], cons:["Very limited practicality","Aging infotainment tech"]},
+  {id:69, make:"Lexus", model:"RX", price:82.0, fuel:"Hybrid", trans:"Automatic", body:"SUV", seats:5, mileage:19.0, unit:"kmpl", pros:["Smooth, efficient hybrid SUV","Excellent build and reliability","Comfortable, upscale cabin"], cons:["Sparse dealer network","Premium price for the badge"]},
+  {id:70, make:"Nissan", model:"X-Trail", price:50.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:7, mileage:14.5, unit:"kmpl", pros:["Spacious, genuine 7-seat SUV","Comfortable highway cruiser","e-Power hybrid efficiency"], cons:["Very limited dealer presence","Slower parts availability"]},
+  {id:54, make:"Bentley", model:"Bentayga", price:450.0, fuel:"Petrol", trans:"Automatic", body:"SUV", seats:5, mileage:8.9, unit:"kmpl", pros:["Handcrafted luxury interior","Surprisingly capable off-road","Powerful W12/V8 engine options"], cons:["Very high maintenance cost","Heavy fuel consumption"]},
+  {id:71, make:"Bentley", model:"Continental GT", price:420.0, fuel:"Petrol", trans:"Automatic", body:"Coupe", seats:4, mileage:9.2, unit:"kmpl", pros:["Sublime grand-touring comfort","Handcrafted cabin details","Powerful, refined W12/V8"], cons:["Very high running costs","Limited service centers"]},
+  {id:72, make:"Mercedes-Benz", model:"GLC", price:73.0, fuel:"Diesel", trans:"Automatic", body:"SUV", seats:5, mileage:15.0, unit:"kmpl", pros:["Refined, comfortable ride","Premium tech-forward cabin","Strong resale in the segment"], cons:["Expensive scheduled servicing","Options add up quickly"]},
+  {id:73, make:"Mercedes-Benz", model:"E-Class", price:78.0, fuel:"Petrol", trans:"Automatic", body:"Sedan", seats:5, mileage:14.6, unit:"kmpl", pros:["Spacious, chauffeur-friendly rear seat","Smooth, refined ride","Loaded with driver-assist tech"], cons:["Firm run-flat tyre ride","High cost of ownership"]},
 ];
 
-const BODY_COLORS = {Hatchback:"#4fd1c5", Sedan:"#f2a93b", SUV:"#e2574c", MPV:"#9b8cff"};
+const BODY_COLORS = {Hatchback:"#4fd1c5", Sedan:"#f2a93b", SUV:"#e2574c", MPV:"#9b8cff", Coupe:"#c48bff"};
+
+/* Formats a price given in ₹ Lakhs, switching to Crore above ₹99L */
+function fmtPrice(p){
+  return p>=100 ? '₹'+(p/100).toFixed(2)+'Cr' : '₹'+p.toFixed(1)+'L';
+}
 
 /* ============================= BACKEND CONFIG ============================= */
-// Points at the local Node.js backend (see /vindex-backend). Change this if you
-// deploy the backend somewhere else later.
-const API_BASE = 'http://localhost:3001/api';
+// Points at the live backend hosted on Render.
+const API_BASE = 'https://vindex-backend-1.onrender.com/api';
 
 /* ============================= STATE ============================= */
 const state = {
@@ -640,7 +703,7 @@ function cardHTML(car){
     <div class="car-body">
       <h3 class="car-title" onclick="openDetail(${car.id})">${car.make} ${car.model}</h3>
       <div class="car-sub">${car.fuel} · ${car.trans} · ${car.seats} seats</div>
-      <div class="car-price">₹${car.price.toFixed(1)}L</div>
+      <div class="car-price">${fmtPrice(car.price)}</div>
       <div class="spec-mini"><span>${car.mileage} ${car.unit}</span></div>
       <div class="car-actions">
         <button onclick="openDetail(${car.id})">Details</button>
@@ -664,7 +727,7 @@ function renderBrowse(){
   const trans = document.getElementById('f-trans').value;
   const body = document.getElementById('f-body').value;
   const maxPrice = parseFloat(document.getElementById('f-price').value);
-  document.getElementById('priceLabel').textContent = '₹'+maxPrice+'L';
+  document.getElementById('priceLabel').textContent = fmtPrice(maxPrice);
 
   const filtered = CARS.filter(c=>{
     if(search && !(`${c.make} ${c.model}`.toLowerCase().includes(search))) return false;
@@ -752,7 +815,7 @@ function openDetail(id){
     <div class="detail-media" style="background:radial-gradient(circle at 50% 35%, ${color}22, transparent 70%);">${carSVG(color)}</div>
     <h2>${c.make} ${c.model}</h2>
     <div class="car-sub">${c.body} · ${c.fuel} · ${c.trans}</div>
-    <div class="detail-price">₹${c.price.toFixed(1)}L <span style="font-size:12px; color:var(--muted); font-weight:400;">on-road (est.)</span></div>
+    <div class="detail-price">${fmtPrice(c.price)} <span style="font-size:12px; color:var(--muted); font-weight:400;">on-road (est.)</span></div>
     <div class="spec-grid">
       <div class="spec-box"><b>${c.seats}</b><span>Seats</span></div>
       <div class="spec-box"><b>${c.mileage}</b><span>${c.unit}</span></div>
@@ -838,7 +901,7 @@ function resultRow(c){
     <div class="car-media" style="background:radial-gradient(circle at 50% 30%, ${color}22, transparent 70%);">${carSVG(color)}</div>
     <div class="res-info">
       <h4>${c.make} ${c.model}</h4>
-      <div class="car-sub">₹${c.price.toFixed(1)}L · ${c.fuel} · ${c.trans} · ${c.seats} seats</div>
+      <div class="car-sub">${fmtPrice(c.price)} · ${c.fuel} · ${c.trans} · ${c.seats} seats</div>
       <div class="why">${matchReason(c)}</div>
     </div>
     <div style="display:flex; align-items:center; gap:14px;">
@@ -875,7 +938,7 @@ function renderCompareView(){
   if(!cars.length){ document.getElementById('compareTableWrap').innerHTML=''; return; }
 
   const rows = [
-    {label:'Price', get:c=>c.price, fmt:v=>'₹'+v.toFixed(1)+'L', lowerBetter:true},
+    {label:'Price', get:c=>c.price, fmt:v=>fmtPrice(v), lowerBetter:true},
     {label:'Body type', get:c=>c.body, fmt:v=>v},
     {label:'Fuel type', get:c=>c.fuel, fmt:v=>v},
     {label:'Transmission', get:c=>c.trans, fmt:v=>v},
