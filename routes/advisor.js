@@ -8,7 +8,7 @@ const router = express.Router();
 // reason, this route silently falls back to the deterministic rule-based picks
 // below — the quiz always returns a result either way.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 function toPublic(row) {
