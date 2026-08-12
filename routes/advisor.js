@@ -82,7 +82,11 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, in exactly this
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: 800,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
 
