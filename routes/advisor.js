@@ -104,6 +104,7 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, in exactly this
 
 // POST /api/advisor/quiz — public. Body: { budget, usage, family, fuel, notes? }
 router.post('/quiz', async (req, res) => {
+  console.log('[advisor] GEMINI_API_KEY present:', !!GEMINI_API_KEY, '| length:', GEMINI_API_KEY ? GEMINI_API_KEY.length : 0);
   const { budget, usage, family, fuel, notes } = req.body || {};
   const budgetNum = parseInt(budget, 10);
   const familyNum = parseInt(family, 10);
