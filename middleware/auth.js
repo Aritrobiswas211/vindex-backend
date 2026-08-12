@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const supabase = require('../db');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
@@ -21,9 +21,14 @@ function requireAuth(req, res, next) {
 }
 
 // Must be used AFTER requireAuth (needs req.userId already set).
-function requireAdmin(req, res, next) {
-  const row = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.userId);
-  if (!row || !row.is_admin) {
+async function requireAdmin(req, res, next) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', req.userId)
+    .maybeSingle();
+
+  if (error || !data || !data.is_admin) {
     return res.status(403).json({ error: 'Admin access required.' });
   }
   next();

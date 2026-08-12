@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors()); // during local testing, allow requests from the HTML file / any origin
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

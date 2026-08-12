@@ -1,17 +1,8 @@
 const express = require('express');
-const db = require('../db');
+const supabase = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
-
-function parseFuel(raw) {
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [String(raw)];
-  } catch (err) {
-    return raw ? [String(raw)] : [];
-  }
-}
 
 function toPublic(row) {
   return {
@@ -20,14 +11,14 @@ function toPublic(row) {
     make: row.make,
     model: row.model,
     price: row.price,
-    fuel: parseFuel(row.fuel),
+    fuel: Array.isArray(row.fuel) ? row.fuel : [],
     trans: row.trans,
     body: row.body,
     seats: row.seats,
     mileage: row.mileage,
     unit: row.unit,
-    pros: JSON.parse(row.pros || '[]'),
-    cons: JSON.parse(row.cons || '[]'),
+    pros: Array.isArray(row.pros) ? row.pros : [],
+    cons: Array.isArray(row.cons) ? row.cons : [],
   };
 }
 
@@ -45,63 +36,50 @@ function validateBody(b) {
 }
 
 // GET /api/cars — public, anyone can browse the catalogue
-router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM cars ORDER BY id').all();
-  res.json({ cars: rows.map(toPublic) });
+router.get('/', async (req, res) => {
+  const { data, error } = await supabase.from('cars').select('*').order('id');
+  if (error) return res.status(500).json({ error: 'Could not load cars.' });
+  res.json({ cars: data.map(toPublic) });
 });
 
 // POST /api/cars — admin only, create a new car
-router.post('/', requireAuth, requireAdmin, (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
   const b = req.body || {};
   const err = validateBody(b);
   if (err) return res.status(400).json({ error: err });
 
-  const info = db.prepare(`
-    INSERT INTO cars (image, make, model, price, fuel, trans, body, seats, mileage, unit, pros, cons)
-    VALUES (@image, @make, @model, @price, @fuel, @trans, @body, @seats, @mileage, @unit, @pros, @cons)
-  `).run({
+  const { data, error } = await supabase.from('cars').insert({
     image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: JSON.stringify(b.fuel),
+    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
-    unit: b.unit,
-    pros: JSON.stringify(b.pros || []),
-    cons: JSON.stringify(b.cons || []),
-  });
+    unit: b.unit, pros: b.pros || [], cons: b.cons || [],
+  }).select().single();
 
-  const row = db.prepare('SELECT * FROM cars WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json({ car: toPublic(row) });
+  if (error) return res.status(500).json({ error: 'Could not create car.' });
+  res.status(201).json({ car: toPublic(data) });
 });
 
 // PUT /api/cars/:id — admin only, edit an existing car
-router.put('/:id', requireAuth, requireAdmin, (req, res) => {
-  const existing = db.prepare('SELECT * FROM cars WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Car not found.' });
-
+router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
   const b = req.body || {};
   const err = validateBody(b);
   if (err) return res.status(400).json({ error: err });
 
-  db.prepare(`
-    UPDATE cars SET image=@image, make=@make, model=@model, price=@price, fuel=@fuel,
-    trans=@trans, body=@body, seats=@seats, mileage=@mileage, unit=@unit, pros=@pros, cons=@cons
-    WHERE id=@id
-  `).run({
-    id: req.params.id,
+  const { data, error } = await supabase.from('cars').update({
     image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: JSON.stringify(b.fuel),
+    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
-    unit: b.unit,
-    pros: JSON.stringify(b.pros || []),
-    cons: JSON.stringify(b.cons || []),
-  });
+    unit: b.unit, pros: b.pros || [], cons: b.cons || [],
+  }).eq('id', req.params.id).select().maybeSingle();
 
-  const row = db.prepare('SELECT * FROM cars WHERE id = ?').get(req.params.id);
-  res.json({ car: toPublic(row) });
+  if (error) return res.status(500).json({ error: 'Could not update car.' });
+  if (!data) return res.status(404).json({ error: 'Car not found.' });
+  res.json({ car: toPublic(data) });
 });
 
 // DELETE /api/cars/:id — admin only
-router.delete('/:id', requireAuth, requireAdmin, (req, res) => {
-  db.prepare('DELETE FROM cars WHERE id = ?').run(req.params.id);
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  await supabase.from('cars').delete().eq('id', req.params.id);
   res.json({ ok: true });
 });
 
