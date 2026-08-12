@@ -74,7 +74,7 @@ ${candidateText}
 
 Pick the ONE car from this list that best fits this user, weighing their notes as much as the structured answers. Only include a SECOND car if it is a genuinely different, comparably good option worth showing (e.g. a different body style or fuel type that also fits well) — otherwise return just one pick.
 
-Respond with ONLY valid JSON, no markdown fences, no commentary, in exactly this shape:
+Respond with ONLY valid JSON, no markdown fences, no commentary, no text before or after the JSON object, in exactly this shape:
 {"picks":[{"id": <number from the list above>, "headline": "<4-6 word headline>", "reason": "<1-2 sentences, specific, referencing their actual answers/notes and this car's real pros or cons>"}]}`;
 
   const resp = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
@@ -93,8 +93,13 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, in exactly this
   if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}`);
   const json = await resp.json();
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const cleaned = text.replace(/```json|```/g, '').trim();
-  const parsed = JSON.parse(cleaned);
+  const stripped = text.replace(/```json|```/g, '').trim();
+  const jsonStart = stripped.indexOf('{');
+  const jsonEnd = stripped.lastIndexOf('}');
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd < jsonStart) {
+    throw new Error(`No JSON object found in Gemini response: ${stripped.slice(0, 200)}`);
+  }
+  const parsed = JSON.parse(stripped.slice(jsonStart, jsonEnd + 1));
   if (!Array.isArray(parsed.picks)) return null;
 
   return parsed.picks
