@@ -91,6 +91,25 @@ if (process.env.ADMIN_EMAIL) {
   }
 }
 
+// Normalizes the cars.fuel column to always store a JSON array (e.g.
+// '["Petrol","CNG"]') so a vehicle can have more than one fuel option.
+// Older rows may still have a plain string like "Petrol" — wrap those.
+{
+  const rows = db.prepare(`SELECT id, fuel FROM cars`).all();
+  const fix = db.prepare(`UPDATE cars SET fuel = ? WHERE id = ?`);
+  const fixMany = db.transaction((list) => {
+    for (const r of list) {
+      let needsFix = true;
+      try {
+        const parsed = JSON.parse(r.fuel);
+        if (Array.isArray(parsed)) needsFix = false;
+      } catch (err) { /* not JSON — needs fixing */ }
+      if (needsFix) fix.run(JSON.stringify([r.fuel]), r.id);
+    }
+  });
+  fixMany(rows);
+}
+
 // One-time seed of the cars table from the original built-in catalogue, so
 // the admin panel has something to manage on first run. Safe to leave this
 // in permanently — it only runs when the table is completely empty.
@@ -108,7 +127,8 @@ if (process.env.ADMIN_EMAIL) {
         for (const c of rows) {
           insert.run({
             image: c.image || null,
-            make: c.make, model: c.model, price: c.price, fuel: c.fuel,
+            make: c.make, model: c.model, price: c.price,
+            fuel: JSON.stringify(Array.isArray(c.fuel) ? c.fuel : [c.fuel]),
             trans: c.trans, body: c.body, seats: c.seats, mileage: c.mileage,
             unit: c.unit,
             pros: JSON.stringify(c.pros || []),

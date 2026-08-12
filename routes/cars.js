@@ -4,6 +4,15 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+function parseFuel(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [String(raw)];
+  } catch (err) {
+    return raw ? [String(raw)] : [];
+  }
+}
+
 function toPublic(row) {
   return {
     id: row.id,
@@ -11,7 +20,7 @@ function toPublic(row) {
     make: row.make,
     model: row.model,
     price: row.price,
-    fuel: row.fuel,
+    fuel: parseFuel(row.fuel),
     trans: row.trans,
     body: row.body,
     seats: row.seats,
@@ -23,11 +32,14 @@ function toPublic(row) {
 }
 
 function validateBody(b) {
-  const required = ['make', 'model', 'price', 'fuel', 'trans', 'body', 'seats', 'mileage', 'unit'];
+  const required = ['make', 'model', 'price', 'trans', 'body', 'seats', 'mileage', 'unit'];
   for (const key of required) {
     if (b[key] === undefined || b[key] === null || b[key] === '') {
       return `Missing field: ${key}`;
     }
+  }
+  if (!Array.isArray(b.fuel) || b.fuel.length === 0) {
+    return 'At least one fuel type is required.';
   }
   return null;
 }
@@ -49,7 +61,7 @@ router.post('/', requireAuth, requireAdmin, (req, res) => {
     VALUES (@image, @make, @model, @price, @fuel, @trans, @body, @seats, @mileage, @unit, @pros, @cons)
   `).run({
     image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
+    make: b.make, model: b.model, price: Number(b.price), fuel: JSON.stringify(b.fuel),
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
     unit: b.unit,
     pros: JSON.stringify(b.pros || []),
@@ -76,7 +88,7 @@ router.put('/:id', requireAuth, requireAdmin, (req, res) => {
   `).run({
     id: req.params.id,
     image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
+    make: b.make, model: b.model, price: Number(b.price), fuel: JSON.stringify(b.fuel),
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
     unit: b.unit,
     pros: JSON.stringify(b.pros || []),
