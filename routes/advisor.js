@@ -84,8 +84,7 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, no text before 
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 800,
-        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 2048,
       },
     }),
   });
