@@ -6,12 +6,19 @@ const { notifyAllSubscribers } = require('./push');
 const router = express.Router();
 
 function toPublic(row) {
+  // Backward compatible: cars saved before the gallery/variants update only
+  // have `image` (single string). Fall back to that if `images` is empty.
+  const images = Array.isArray(row.images) && row.images.length
+    ? row.images
+    : (row.image ? [row.image] : []);
   return {
     id: row.id,
-    image: row.image || undefined,
+    image: images[0] || undefined, // kept for any old code paths that still read car.image
+    images,
     make: row.make,
     model: row.model,
     price: row.price,
+    variants: Array.isArray(row.variants) ? row.variants : [],
     fuel: Array.isArray(row.fuel) ? row.fuel : [],
     trans: row.trans,
     body: row.body,
@@ -33,7 +40,25 @@ function validateBody(b) {
   if (!Array.isArray(b.fuel) || b.fuel.length === 0) {
     return 'At least one fuel type is required.';
   }
+  if (b.variants !== undefined) {
+    if (!Array.isArray(b.variants)) return 'Variants must be a list.';
+    for (const v of b.variants) {
+      if (!v || typeof v.name !== 'string' || !v.name.trim() || isNaN(Number(v.price))) {
+        return 'Each variant needs a name and a valid price.';
+      }
+    }
+  }
   return null;
+}
+
+// If variants are provided, the car's headline "price" is always the cheapest
+// variant — so budget filters, sorting, and the quiz keep working unchanged.
+function deriveBasePrice(b) {
+  if (Array.isArray(b.variants) && b.variants.length) {
+    const prices = b.variants.map(v => Number(v.price)).filter(n => !isNaN(n));
+    if (prices.length) return Math.min(...prices);
+  }
+  return Number(b.price);
 }
 
 // GET /api/cars — public, anyone can browse the catalogue
@@ -50,8 +75,10 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   if (err) return res.status(400).json({ error: err });
 
   const { data, error } = await supabase.from('cars').insert({
-    image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
+    image: (Array.isArray(b.images) && b.images[0]) || b.image || null,
+    images: Array.isArray(b.images) ? b.images : [],
+    variants: Array.isArray(b.variants) ? b.variants : [],
+    make: b.make, model: b.model, price: deriveBasePrice(b), fuel: b.fuel,
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
     unit: b.unit, pros: b.pros || [], cons: b.cons || [],
   }).select().single();
@@ -75,8 +102,10 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (err) return res.status(400).json({ error: err });
 
   const { data, error } = await supabase.from('cars').update({
-    image: b.image || null,
-    make: b.make, model: b.model, price: Number(b.price), fuel: b.fuel,
+    image: (Array.isArray(b.images) && b.images[0]) || b.image || null,
+    images: Array.isArray(b.images) ? b.images : [],
+    variants: Array.isArray(b.variants) ? b.variants : [],
+    make: b.make, model: b.model, price: deriveBasePrice(b), fuel: b.fuel,
     trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
     unit: b.unit, pros: b.pros || [], cons: b.cons || [],
   }).eq('id', req.params.id).select().maybeSingle();
