@@ -1,6 +1,7 @@
 const express = require('express');
 const supabase = require('../db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { notifyAllSubscribers } = require('./push');
 
 const router = express.Router();
 
@@ -56,6 +57,14 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   }).select().single();
 
   if (error) return res.status(500).json({ error: 'Could not create car.' });
+
+  // Fire-and-forget: don't make the admin wait on push delivery to get their response.
+  notifyAllSubscribers({
+    title: 'New car added on VINDEX',
+    body: `${data.make} ${data.model} — ₹${data.price}L. Check it out!`,
+    url: '/'
+  }).catch(err => console.error('Push notify failed:', err));
+
   res.status(201).json({ car: toPublic(data) });
 });
 
