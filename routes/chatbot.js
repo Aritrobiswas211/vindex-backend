@@ -6,7 +6,9 @@ const router = express.Router();
 // Groq gives a free API key (no billing required). Get one at https://console.groq.com
 // and set GROQ_API_KEY in your backend's environment variables (e.g. Render dashboard).
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const GROQ_MODEL = 'llama-3.3-70b-versatile'; // free tier model on Groq
+// Groq announced (June 17, 2026) that llama-3.3-70b-versatile is being deprecated and
+// shut down by August 2026 — this is Groq's own recommended free-tier replacement.
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 function buildSystemPrompt(cars) {
   // Trim each car down to only what the assistant needs, to keep the
@@ -32,6 +34,7 @@ Rules:
 - Keep replies short and conversational (2-5 sentences, or a short bullet list for comparisons/multiple picks). Avoid long essays.
 - If nothing in the inventory fits, say so honestly instead of forcing a recommendation.
 - If asked something totally unrelated to cars or this site, gently redirect back to how you can help with car buying decisions.
+- Language: always reply in the same language the visitor's most recent message is written in — English, Hindi, Hinglish, Tamil, Bengali, or any other language they use. Match their language naturally, the way a fluent local speaker would; keep car names, brand names, and numbers/prices as-is rather than translating them literally.
 
 INVENTORY (JSON):
 ${JSON.stringify(compactCars)}`;
@@ -57,25 +60,29 @@ router.post('/chat', async (req, res) => {
   try {
     const { data: cars } = await supabase.from('cars').select('*');
     const systemPrompt = buildSystemPrompt(cars);
+    const payload = {
+      model: GROQ_MODEL,
+      messages: [{ role: 'system', content: systemPrompt }, ...trimmedHistory],
+      temperature: 0.6,
+      max_tokens: 500
+    };
 
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [{ role: 'system', content: systemPrompt }, ...trimmedHistory],
-        temperature: 0.6,
-        max_tokens: 400
-      })
-    });
+    let groqRes = await callGroq(payload);
+
+    // One retry on rate limiting or a transient server hiccup — smooths over
+    // brief blips instead of immediately telling the visitor it's down.
+    if (!groqRes.ok && (groqRes.status === 429 || groqRes.status >= 500)) {
+      await new Promise(r => setTimeout(r, 800));
+      groqRes = await callGroq(payload);
+    }
 
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       console.error('Groq API error:', groqRes.status, errText);
-      return res.status(502).json({ error: 'The assistant is temporarily unavailable. Please try again.' });
+      const friendly = groqRes.status === 429
+        ? "I'm getting a lot of requests right now — please try again in a few seconds."
+        : 'The assistant is temporarily unavailable. Please try again.';
+      return res.status(502).json({ error: friendly });
     }
 
     const data = await groqRes.json();
@@ -90,5 +97,16 @@ router.post('/chat', async (req, res) => {
     res.status(500).json({ error: 'Something went wrong reaching the assistant.' });
   }
 });
+
+function callGroq(payload) {
+  return fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`
+    },
+    body: JSON.stringify(payload)
+  });
+}
 
 module.exports = router;
