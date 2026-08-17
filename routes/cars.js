@@ -46,6 +46,9 @@ function validateBody(b) {
       if (!v || typeof v.name !== 'string' || !v.name.trim() || isNaN(Number(v.price))) {
         return 'Each variant needs a name and a valid price.';
       }
+      if (v.features !== undefined && !Array.isArray(v.features)) {
+        return 'Variant features must be a list.';
+      }
     }
   }
   return null;
