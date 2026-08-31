@@ -21,11 +21,21 @@ function toPublic(row) {
     trans: row.trans,
     body: row.body,
     seats: row.seats,
-    mileage: row.mileage,
-    unit: row.unit,
+    // mileage is one entry per fuel type, e.g. {Petrol:{value:19,unit:"kmpl"}, CNG:{value:26,unit:"km/kg"}}
+    mileage: (row.mileage && typeof row.mileage === 'object' && !Array.isArray(row.mileage)) ? row.mileage : {},
     pros: Array.isArray(row.pros) ? row.pros : [],
     cons: Array.isArray(row.cons) ? row.cons : [],
   };
+}
+
+// Turns a car's per-fuel mileage object into readable text for the AI prompt,
+// e.g. "19 kmpl (Petrol) / 26 km/kg (CNG)" or just "24.9 kmpl" for single-fuel cars.
+function formatMileage(mileage, fuels) {
+  const fuelList = Array.isArray(fuels) ? fuels : [];
+  const parts = fuelList
+    .filter(f => mileage && mileage[f])
+    .map(f => `${mileage[f].value} ${mileage[f].unit}${fuelList.length > 1 ? ` (${f})` : ''}`);
+  return parts.length ? parts.join(' / ') : 'n/a';
 }
 
 // Same weighting the old client-side quiz used to sort cars. Used both to
@@ -58,7 +68,7 @@ async function askGemini({ shortlist, budget, usage, familyNum, fuel, notes }) {
   const candidateText = shortlist
     .map(
       (c) =>
-        `id:${c.id} | ${c.make} ${c.model} | ₹${c.price}L | ${c.body} | seats ${c.seats} | fuel ${c.fuel.join('/')} | ${c.trans} | ${c.mileage} ${c.unit} | pros: ${c.pros.join('; ')} | cons: ${c.cons.join('; ')}`
+        `id:${c.id} | ${c.make} ${c.model} | ₹${c.price}L | ${c.body} | seats ${c.seats} | fuel ${c.fuel.join('/')} | ${c.trans} | ${formatMileage(c.mileage, c.fuel)} | pros: ${c.pros.join('; ')} | cons: ${c.cons.join('; ')}`
     )
     .join('\n');
 

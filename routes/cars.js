@@ -23,15 +23,42 @@ function toPublic(row) {
     trans: row.trans,
     body: row.body,
     seats: row.seats,
-    mileage: row.mileage,
-    unit: row.unit,
+    // mileage is now one entry per fuel type, e.g. {Petrol:{value:19,unit:"kmpl"}, CNG:{value:26,unit:"km/kg"}}
+    mileage: (row.mileage && typeof row.mileage === 'object' && !Array.isArray(row.mileage)) ? row.mileage : {},
     pros: Array.isArray(row.pros) ? row.pros : [],
     cons: Array.isArray(row.cons) ? row.cons : [],
   };
 }
 
+// Every checked fuel type needs its own mileage entry with a numeric value and a unit.
+function validateMileage(mileage, fuels) {
+  if (!mileage || typeof mileage !== 'object' || Array.isArray(mileage)) {
+    return 'Mileage is required for each fuel type.';
+  }
+  const missing = fuels.filter(f => {
+    const entry = mileage[f];
+    return !entry || isNaN(Number(entry.value)) || !entry.unit || !String(entry.unit).trim();
+  });
+  if (missing.length) {
+    return `Missing mileage/unit for: ${missing.join(', ')}`;
+  }
+  return null;
+}
+
+// Keeps only entries for fuel types the car actually has, and normalizes value/unit types.
+function sanitizeMileage(mileage, fuels) {
+  const clean = {};
+  fuels.forEach(f => {
+    const entry = mileage[f];
+    if (entry && !isNaN(Number(entry.value)) && entry.unit) {
+      clean[f] = { value: Number(entry.value), unit: String(entry.unit).trim() };
+    }
+  });
+  return clean;
+}
+
 function validateBody(b) {
-  const required = ['make', 'model', 'price', 'trans', 'body', 'seats', 'mileage', 'unit'];
+  const required = ['make', 'model', 'price', 'trans', 'body', 'seats'];
   for (const key of required) {
     if (b[key] === undefined || b[key] === null || b[key] === '') {
       return `Missing field: ${key}`;
@@ -40,6 +67,8 @@ function validateBody(b) {
   if (!Array.isArray(b.fuel) || b.fuel.length === 0) {
     return 'At least one fuel type is required.';
   }
+  const mileageErr = validateMileage(b.mileage, b.fuel);
+  if (mileageErr) return mileageErr;
   if (b.variants !== undefined) {
     if (!Array.isArray(b.variants)) return 'Variants must be a list.';
     for (const v of b.variants) {
@@ -82,8 +111,9 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     images: Array.isArray(b.images) ? b.images : [],
     variants: Array.isArray(b.variants) ? b.variants : [],
     make: b.make, model: b.model, price: deriveBasePrice(b), fuel: b.fuel,
-    trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
-    unit: b.unit, pros: b.pros || [], cons: b.cons || [],
+    trans: b.trans, body: b.body, seats: Number(b.seats),
+    mileage: sanitizeMileage(b.mileage, b.fuel),
+    pros: b.pros || [], cons: b.cons || [],
   }).select().single();
 
   if (error) return res.status(500).json({ error: 'Could not create car.' });
@@ -109,8 +139,9 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
     images: Array.isArray(b.images) ? b.images : [],
     variants: Array.isArray(b.variants) ? b.variants : [],
     make: b.make, model: b.model, price: deriveBasePrice(b), fuel: b.fuel,
-    trans: b.trans, body: b.body, seats: Number(b.seats), mileage: Number(b.mileage),
-    unit: b.unit, pros: b.pros || [], cons: b.cons || [],
+    trans: b.trans, body: b.body, seats: Number(b.seats),
+    mileage: sanitizeMileage(b.mileage, b.fuel),
+    pros: b.pros || [], cons: b.cons || [],
   }).eq('id', req.params.id).select().maybeSingle();
 
   if (error) return res.status(500).json({ error: 'Could not update car.' });
