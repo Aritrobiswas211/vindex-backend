@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/admin');
 const advisorRoutes = require('./routes/advisor');
 const chatbotRoutes = require('./routes/chatbot');
 const { router: pushRoutes } = require('./routes/push');
+const aiFillRoutes = require('./routes/ai-fill');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,6 +26,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/advisor', advisorRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/admin', aiFillRoutes);
 
 app.listen(PORT, () => {
   console.log(`VINDEX backend running at http://localhost:${PORT}`);

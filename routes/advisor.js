@@ -84,7 +84,7 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, no text before 
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 2048, // generous headroom — this model spends some tokens on internal "thinking" before the visible answer
       },
     }),
   });
@@ -92,6 +92,11 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, no text before 
   if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}`);
   const json = await resp.json();
   const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (!text.trim()) {
+    throw new Error(`Gemini returned empty text (finishReason: ${json.candidates?.[0]?.finishReason || 'unknown'})`);
+  }
+  // The model is asked to return only JSON, but sometimes wraps it in
+  // markdown fences or a stray sentence — pull out just the {...} object.
   const stripped = text.replace(/```json|```/g, '').trim();
   const jsonStart = stripped.indexOf('{');
   const jsonEnd = stripped.lastIndexOf('}');
@@ -112,7 +117,6 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, no text before 
 
 // POST /api/advisor/quiz — public. Body: { budget, usage, family, fuel, notes? }
 router.post('/quiz', async (req, res) => {
-  console.log('[advisor] GEMINI_API_KEY present:', !!GEMINI_API_KEY, '| length:', GEMINI_API_KEY ? GEMINI_API_KEY.length : 0);
   const { budget, usage, family, fuel, notes } = req.body || {};
   const budgetNum = parseInt(budget, 10);
   const familyNum = parseInt(family, 10);
