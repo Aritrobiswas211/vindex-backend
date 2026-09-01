@@ -10,15 +10,55 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // shut down by August 2026 — this is Groq's own recommended free-tier replacement.
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 
+// Turns a car's per-fuel mileage object into compact text, e.g. "19kmpl/26km-kg(CNG)"
+// for a multi-fuel car, or just "24.9kmpl" for a single-fuel one.
+function formatMileageCompact(mileage, fuels) {
+  const fuelList = Array.isArray(fuels) ? fuels : [];
+  const parts = fuelList
+    .filter(f => mileage && mileage[f])
+    .map(f => `${mileage[f].value}${mileage[f].unit}${fuelList.length > 1 ? `(${f})` : ''}`);
+  return parts.length ? parts.join('/') : 'n/a';
+}
+
+// One car per line, pipe-delimited, instead of JSON — no repeated {}/""/keys per
+// car, which is what was pushing the prompt over Groq's free-tier token limit as
+// the catalogue grew. includeProsCons can be dropped as a fallback if the
+// inventory is still too large even in this compact form.
+function buildInventoryText(cars, includeProsCons) {
+  return (cars || []).map(c => {
+    const fuel = Array.isArray(c.fuel) ? c.fuel.join('/') : '';
+    const trans = Array.isArray(c.trans) ? c.trans.join('/') : (c.trans || '');
+    const base = `${c.make} ${c.model} | ₹${c.price}L | ${c.body} | ${fuel} | ${trans} | ${c.seats}s | ${formatMileageCompact(c.mileage, c.fuel)}`;
+    if (!includeProsCons) return base;
+    const pros = Array.isArray(c.pros) ? c.pros.slice(0, 2).join('; ') : '';
+    const cons = Array.isArray(c.cons) ? c.cons.slice(0, 2).join('; ') : '';
+    return `${base} | +${pros} | -${cons}`;
+  }).join('\n');
+}
+
+// Keeps the inventory block from ever growing large enough to blow the token
+// budget again as the catalogue grows past 77 cars — degrades gracefully
+// (drop pros/cons, then cap the car count) rather than failing outright.
+const MAX_INVENTORY_CHARS = 10000;
+function buildBoundedInventoryText(cars) {
+  let text = buildInventoryText(cars, true);
+  if (text.length <= MAX_INVENTORY_CHARS) return text;
+
+  text = buildInventoryText(cars, false); // drop pros/cons first
+  if (text.length <= MAX_INVENTORY_CHARS) return text;
+
+  // Still too big — hard cap the number of cars shown as a last resort.
+  const lines = text.split('\n');
+  let kept = lines;
+  while (kept.join('\n').length > MAX_INVENTORY_CHARS && kept.length > 1) {
+    kept = kept.slice(0, Math.floor(kept.length * 0.8));
+  }
+  const omitted = lines.length - kept.length;
+  return kept.join('\n') + (omitted > 0 ? `\n...and ${omitted} more cars not shown here (ask about one by name and I can still help).` : '');
+}
+
 function buildSystemPrompt(cars) {
-  // Trim each car down to only what the assistant needs, to keep the
-  // request small and fast.
-  const compactCars = (cars || []).map(c => ({
-    make: c.make, model: c.model, price_lakh: c.price, body: c.body,
-    fuel: c.fuel, trans: c.trans, seats: c.seats,
-    mileage: c.mileage, unit: c.unit,
-    pros: c.pros, cons: c.cons
-  }));
+  const inventoryText = buildBoundedInventoryText(cars || []);
 
   return `You are the "Vindex Assistant" — a friendly, concise car-advisory chatbot embedded on the Vindex car recommendation website.
 
@@ -36,8 +76,8 @@ Rules:
 - If asked something totally unrelated to cars or this site, gently redirect back to how you can help with car buying decisions.
 - Language: always reply in the same language the visitor's most recent message is written in — English, Hindi, Hinglish, Tamil, Bengali, or any other language they use. Match their language naturally, the way a fluent local speaker would; keep car names, brand names, and numbers/prices as-is rather than translating them literally.
 
-INVENTORY (JSON):
-${JSON.stringify(compactCars)}`;
+INVENTORY (one car per line: make model | price | body | fuel | transmission | seats | mileage | pros | cons):
+${inventoryText}`;
 }
 
 // POST /api/chatbot/chat  — body: { messages: [{role:'user'|'assistant', content:'...'}] }
@@ -79,7 +119,7 @@ router.post('/chat', async (req, res) => {
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       console.error('Groq API error:', groqRes.status, errText);
-      const friendly = groqRes.status === 429
+      const friendly = groqRes.status === 429 || groqRes.status === 413
         ? "I'm getting a lot of requests right now — please try again in a few seconds."
         : 'The assistant is temporarily unavailable. Please try again.';
       return res.status(502).json({ error: friendly });
