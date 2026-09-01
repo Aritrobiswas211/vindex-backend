@@ -57,8 +57,11 @@ function buildBoundedInventoryText(cars) {
   return kept.join('\n') + (omitted > 0 ? `\n...and ${omitted} more cars not shown here (ask about one by name and I can still help).` : '');
 }
 
-function buildSystemPrompt(cars) {
+function buildSystemPrompt(cars, language) {
   const inventoryText = buildBoundedInventoryText(cars || []);
+  const languageRule = language
+    ? `- The visitor has explicitly chosen to chat in: ${language}. Always reply in ${language}, regardless of what language their message is typed in — do not switch languages based on their wording. Keep car names, brand names, and numbers/prices as-is rather than translating them literally.`
+    : `- Language: always reply in the same language the visitor's most recent message is written in — English, Hindi, Hinglish, Tamil, Bengali, or any other language they use. Match their language naturally, the way a fluent local speaker would; keep car names, brand names, and numbers/prices as-is rather than translating them literally.`;
 
   return `You are the "Vindex Assistant" — a friendly, concise car-advisory chatbot embedded on the Vindex car recommendation website.
 
@@ -74,15 +77,16 @@ Rules:
 - Keep replies short and conversational (2-5 sentences, or a short bullet list for comparisons/multiple picks). Avoid long essays.
 - If nothing in the inventory fits, say so honestly instead of forcing a recommendation.
 - If asked something totally unrelated to cars or this site, gently redirect back to how you can help with car buying decisions.
-- Language: always reply in the same language the visitor's most recent message is written in — English, Hindi, Hinglish, Tamil, Bengali, or any other language they use. Match their language naturally, the way a fluent local speaker would; keep car names, brand names, and numbers/prices as-is rather than translating them literally.
+- Plain text only — this chat window does not render markdown. Never use **bold**, _italics_, #headings, or [links](url); asterisks and underscores will show up as literal characters to the visitor. For lists, just start a line with "-" and a space.
+${languageRule}
 
 INVENTORY (one car per line: make model | price | body | fuel | transmission | seats | mileage | pros | cons):
 ${inventoryText}`;
 }
 
-// POST /api/chatbot/chat  — body: { messages: [{role:'user'|'assistant', content:'...'}] }
+// POST /api/chatbot/chat  — body: { messages: [{role:'user'|'assistant', content:'...'}], language?: 'English'|'Hindi'|... }
 router.post('/chat', async (req, res) => {
-  const { messages } = req.body || {};
+  const { messages, language } = req.body || {};
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Missing messages.' });
@@ -99,7 +103,7 @@ router.post('/chat', async (req, res) => {
 
   try {
     const { data: cars } = await supabase.from('cars').select('*');
-    const systemPrompt = buildSystemPrompt(cars);
+    const systemPrompt = buildSystemPrompt(cars, language);
     const payload = {
       model: GROQ_MODEL,
       messages: [{ role: 'system', content: systemPrompt }, ...trimmedHistory],
