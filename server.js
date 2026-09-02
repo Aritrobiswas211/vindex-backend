@@ -33,3 +33,5 @@ app.use('/api/settings', settingsRoutes);
 app.listen(PORT, () => {
   console.log(`VINDEX backend running at http://localhost:${PORT}`);
 });
+const dealersRouter = require('./routes/dealers');
+app.use('/api', dealersRouter);
