@@ -1,6 +1,16 @@
 const jwt = require('jsonwebtoken');
 const supabase = require('../db');
 
+// The 'dev-secret-change-me' fallback is fine for local development, but if
+// this ever ran in production without a real JWT_SECRET set, it would
+// silently sign every session token with a public, guessable string —
+// anyone could forge a valid login. Failing loudly at boot beats failing
+// quietly at runtime.
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET is not set. Refusing to start in production with a fallback secret — set JWT_SECRET in your Render environment variables.'
+  );
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
 
 function requireAuth(req, res, next) {
