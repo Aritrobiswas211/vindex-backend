@@ -41,14 +41,14 @@ function formatMileage(mileage, fuels) {
 // Same weighting the old client-side quiz used to sort cars. Used both to
 // build the shortlist handed to the AI (so it isn't reasoning over all 70+
 // cars) and as the deterministic fallback if the AI is unavailable.
-function ruleScore(c, { budget, usage, familyNum, fuel, brand }) {
+function ruleScore(c, { budget, usage, familyNum, fuel, brands }) {
   const usageBodyMap = {
     city: ['Hatchback', 'Sedan'],
     highway: ['Sedan', 'SUV'],
     mixed: ['SUV', 'MPV'],
     offroad: ['SUV'],
   };
-  const wantsBrand = brand && brand !== 'any';
+  const wantedBrands = normalizeBrands(brands);
   let score = 0;
   // Budget: reward cars that use more of the stated budget (more car for the
   // money) rather than giving every car under budget the same flat points —
@@ -62,8 +62,16 @@ function ruleScore(c, { budget, usage, familyNum, fuel, brand }) {
   else score -= 10;
   if (fuel === 'any' || c.fuel.includes(fuel)) score += 22;
   if (usageBodyMap[usage] && usageBodyMap[usage].includes(c.body)) score += 13; else score += 3;
-  if (wantsBrand && c.make.toLowerCase() === String(brand).toLowerCase()) score += 12;
+  if (wantedBrands.length && wantedBrands.includes(c.make.toLowerCase())) score += 12;
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+// Lowercases and dedupes a brands list, tolerating a single string too (in
+// case an older client or a direct API call still sends one instead of an
+// array).
+function normalizeBrands(brands) {
+  const list = Array.isArray(brands) ? brands : (brands ? [brands] : []);
+  return [...new Set(list.filter((b) => b && b !== 'any').map((b) => String(b).toLowerCase()))];
 }
 
 function matchHeadline(score) {
@@ -73,17 +81,18 @@ function matchHeadline(score) {
   return 'Closest fit available';
 }
 
-function fallbackReason(c, { budget, usage, familyNum, fuel, brand }) {
+function fallbackReason(c, { budget, usage, familyNum, fuel, brands }) {
+  const wantedBrands = normalizeBrands(brands);
   const bits = [`priced at ₹${c.price}L against your ₹${budget}L budget`, `${c.seats} seats for your group`];
   if (fuel !== 'any' && c.fuel.includes(fuel)) bits.push(`comes in ${fuel}`);
-  if (brand && brand !== 'any' && c.make.toLowerCase() === String(brand).toLowerCase()) bits.push('is your preferred brand');
+  if (wantedBrands.length && wantedBrands.includes(c.make.toLowerCase())) bits.push('is one of your preferred brands');
   let text = bits.join(', ');
   text = text.charAt(0).toUpperCase() + text.slice(1) + '.';
   if (c.pros && c.pros[0]) text += ` Notable: ${c.pros[0]}.`;
   return text;
 }
 
-async function askGemini({ shortlist, budget, usage, familyNum, fuel, brand, notes }) {
+async function askGemini({ shortlist, budget, usage, familyNum, fuel, brands, notes }) {
   const candidateText = shortlist
     .map(
       (c) =>
@@ -91,20 +100,22 @@ async function askGemini({ shortlist, budget, usage, familyNum, fuel, brand, not
     )
     .join('\n');
 
-  const wantsBrand = brand && brand !== 'any';
+  const brandList = Array.isArray(brands) ? brands.filter((b) => b && b !== 'any') : [];
+  const wantsBrand = brandList.length > 0;
+  const brandsText = brandList.join(', ');
 
   const prompt = `You are a car-buying advisor for the Indian market. A user answered a short quiz:
 - Budget: up to ₹${budget}L
 - Driving pattern: ${usage}
 - People usually riding along: ${familyNum}
 - Fuel preference: ${fuel === 'any' ? 'no preference' : fuel}
-- Brand preference: ${wantsBrand ? brand : 'no preference'}
+- Brand preference: ${wantsBrand ? brandsText : 'no preference'}
 ${notes ? `- Extra notes from the user: "${String(notes).slice(0, 400)}"` : '- Extra notes from the user: (none given)'}
 
 Here is a shortlist of real cars to choose from, one per line (id | make model | price | body | seats | fuel | transmission | mileage | pros | cons):
 ${candidateText}
 
-Pick the ONE car from this list that best fits this user, weighing their notes as much as the structured answers.${wantsBrand ? ` The user asked for ${brand} specifically — strongly prefer a ${brand} car from the shortlist above if one is a reasonable fit, and only pick a different brand if no ${brand} car in the list comes close to fitting their budget, seats, or fuel needs (say so plainly in the reason if you do).` : ''} Only include a SECOND car if it is a genuinely different, comparably good option worth showing (e.g. a different body style or fuel type that also fits well) — otherwise return just one pick.
+Pick the ONE car from this list that best fits this user, weighing their notes as much as the structured answers.${wantsBrand ? ` The user asked for one of these brands specifically: ${brandsText} — strongly prefer a car from one of those brands from the shortlist above if one is a reasonable fit, and only pick a different brand if none of ${brandsText} come close to fitting their budget, seats, or fuel needs (say so plainly in the reason if you do).` : ''} Only include a SECOND car if it is a genuinely different, comparably good option worth showing (e.g. a different body style or fuel type that also fits well) — otherwise return just one pick.
 
 Respond with ONLY valid JSON, no markdown fences, no commentary, no text before or after the JSON object, in exactly this shape:
 {"picks":[{"id": <number from the list above>, "headline": "<4-6 word headline>", "reason": "<1-2 sentences, specific, referencing their actual answers/notes and this car's real pros or cons>"}]}`;
@@ -147,9 +158,9 @@ Respond with ONLY valid JSON, no markdown fences, no commentary, no text before 
     }));
 }
 
-// POST /api/advisor/quiz — public. Body: { budget, usage, family, fuel, brand?, notes? }
+// POST /api/advisor/quiz — public. Body: { budget, usage, family, fuel, brands?, notes? }
 router.post('/quiz', async (req, res) => {
-  const { budget, usage, family, fuel, brand, notes } = req.body || {};
+  const { budget, usage, family, fuel, brands, notes } = req.body || {};
   const budgetNum = parseInt(budget, 10);
   const familyNum = parseInt(family, 10);
 
@@ -161,17 +172,17 @@ router.post('/quiz', async (req, res) => {
   if (error) return res.status(500).json({ error: 'Could not load cars.' });
   const allCars = data.map(toPublic);
 
-  // If the user asked for a specific brand, score within that brand's
+  // If the user asked for one or more brands, score within that combined
   // lineup only — this is what actually makes the pick precise. Only fall
-  // back to the full catalogue if that brand isn't in the data at all, so
-  // the quiz never dead-ends on an empty result.
-  const wantsBrand = brand && brand !== 'any';
-  const brandCars = wantsBrand
-    ? allCars.filter((c) => c.make.toLowerCase() === String(brand).toLowerCase())
+  // back to the full catalogue if none of those brands are in the data at
+  // all, so the quiz never dead-ends on an empty result.
+  const wantedBrands = normalizeBrands(brands);
+  const brandCars = wantedBrands.length
+    ? allCars.filter((c) => wantedBrands.includes(c.make.toLowerCase()))
     : [];
   const cars = brandCars.length ? brandCars : allCars;
 
-  const ctx = { budget: budgetNum, usage, familyNum, fuel, brand };
+  const ctx = { budget: budgetNum, usage, familyNum, fuel, brands };
   const scored = cars
     .map((c) => ({ ...c, score: ruleScore(c, ctx) }))
     .sort((a, b) => b.score - a.score);
