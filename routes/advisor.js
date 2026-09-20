@@ -50,21 +50,37 @@ function ruleScore(c, { budget, usage, familyNum, fuel, brand }) {
   };
   const wantsBrand = brand && brand !== 'any';
   let score = 0;
-  if (c.price <= budget) score += 35; else score += Math.max(0, 35 - (c.price - budget) * 5);
-  if (c.seats >= familyNum) score += 18; else score -= 10;
+  // Budget: reward cars that use more of the stated budget (more car for the
+  // money) rather than giving every car under budget the same flat points —
+  // otherwise a ₹6L and a ₹8.5L car against a ₹9L budget score identically.
+  if (c.price <= budget) score += 26 + 9 * (c.price / budget);
+  else score += Math.max(0, 35 - (c.price - budget) * 5);
+  // Seats: small bonus for headroom above what's needed, capped so it never
+  // dominates — a 5-seater and a 7-seater against a 4-person group shouldn't
+  // tie just because both clear the minimum.
+  if (c.seats >= familyNum) score += 14 + Math.min(4, (c.seats - familyNum) * 1.3);
+  else score -= 10;
   if (fuel === 'any' || c.fuel.includes(fuel)) score += 22;
   if (usageBodyMap[usage] && usageBodyMap[usage].includes(c.body)) score += 13; else score += 3;
   if (wantsBrand && c.make.toLowerCase() === String(brand).toLowerCase()) score += 12;
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+function matchHeadline(score) {
+  if (score >= 92) return 'Excellent overall match';
+  if (score >= 75) return 'Strong overall match';
+  if (score >= 55) return 'Solid all-round option';
+  return 'Closest fit available';
+}
+
 function fallbackReason(c, { budget, usage, familyNum, fuel, brand }) {
-  const bits = [];
-  if (c.price <= budget) bits.push('fits your budget');
-  if (c.seats >= familyNum) bits.push('seats your group');
-  if (fuel !== 'any' && c.fuel.includes(fuel)) bits.push('matches your fuel preference');
+  const bits = [`priced at ₹${c.price}L against your ₹${budget}L budget`, `${c.seats} seats for your group`];
+  if (fuel !== 'any' && c.fuel.includes(fuel)) bits.push(`comes in ${fuel}`);
   if (brand && brand !== 'any' && c.make.toLowerCase() === String(brand).toLowerCase()) bits.push('is your preferred brand');
-  return bits.length ? `Matches on ${bits.join(', ')}.` : 'Closest overall fit among what is available.';
+  let text = bits.join(', ');
+  text = text.charAt(0).toUpperCase() + text.slice(1) + '.';
+  if (c.pros && c.pros[0]) text += ` Notable: ${c.pros[0]}.`;
+  return text;
 }
 
 async function askGemini({ shortlist, budget, usage, familyNum, fuel, brand, notes }) {
@@ -164,7 +180,7 @@ router.post('/quiz', async (req, res) => {
   const fallbackPicks = scored.slice(0, 2).map((c) => ({
     id: c.id,
     score: c.score,
-    headline: c.score >= 70 ? 'Strong overall match' : 'Closest fit available',
+    headline: matchHeadline(c.score),
     reason: fallbackReason(c, ctx),
   }));
 
