@@ -193,4 +193,38 @@ router.post('/transcribe', express.raw({ type: '*/*', limit: '25mb' }), async (r
   }
 });
 
+// Groq's free TTS tier is tightly capped (short per-request text, low daily
+// volume) and English/Arabic-only — so this is a best-effort upgrade the
+// frontend tries for short English/Hinglish replies, falling back to the
+// browser's own speech synthesis on any error, quota limit, or unsupported
+// language (Hindi/Tamil/Bengali always use the browser voice).
+const GROQ_TTS_MODEL = 'canopylabs/orpheus-v1-english';
+const GROQ_TTS_VOICE = 'hannah';
+
+// POST /api/chatbot/speak — body: { text }
+router.post('/speak', async (req, res) => {
+  if (!GROQ_API_KEY) return res.status(500).json({ error: 'Not configured.' });
+  const { text } = req.body || {};
+  if (!text || typeof text !== 'string') return res.status(400).json({ error: 'Missing text.' });
+  const clipped = text.slice(0, 180); // stay well inside the free tier's per-request cap
+
+  try {
+    const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({ model: GROQ_TTS_MODEL, voice: GROQ_TTS_VOICE, input: clipped, response_format: 'mp3' }),
+    });
+    if (!resp.ok) {
+      // Expected fairly often given the tight free-tier quota — not logged
+      // as an error, the frontend silently falls back to browser speech.
+      return res.status(502).json({ error: 'TTS unavailable right now.' });
+    }
+    const arrayBuffer = await resp.arrayBuffer();
+    res.set('Content-Type', 'audio/mpeg');
+    res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    res.status(500).json({ error: 'TTS failed.' });
+  }
+});
+
 module.exports = router;
