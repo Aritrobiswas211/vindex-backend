@@ -13,6 +13,7 @@ const aiFillRoutes = require('./routes/ai-fill');
 const settingsRoutes = require('./routes/settings');
 const dealersRouter = require('./routes/dealers');
 const mediaRoutes = require('./routes/media');
+const leadsRoutes = require('./routes/leads');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +34,7 @@ app.use('/api/admin', aiFillRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api', dealersRouter);
 app.use('/api/media', mediaRoutes);
+app.use('/api/leads', leadsRoutes);
 
 app.listen(PORT, () => {
   console.log(`VINDEX backend running at http://localhost:${PORT}`);
